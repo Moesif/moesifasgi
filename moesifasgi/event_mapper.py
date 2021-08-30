@@ -44,8 +44,8 @@ class EventMapper:
                     self.transaction_id = str(uuid.uuid4())
             else:
                 self.transaction_id = str(uuid.uuid4())
-            # Add transaction id to the request header
-            request_headers["X-Moesif-Transaction-Id"] = self.transaction_id
+                # Add transaction id to the request header
+                request_headers["X-Moesif-Transaction-Id"] = self.transaction_id
         # Request Ip address
         request_ip_address = self.client_ip.get_client_address(request_headers, request.client.host)
         # Request Body
