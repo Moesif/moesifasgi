@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from moesifasgi import MoesifMiddleware
 from starlette.middleware import Middleware
+from typing import Optional
+from pydantic import BaseModel
 import json
 
 
@@ -49,6 +51,17 @@ moesif_settings = {
 app = FastAPI()
 
 app.add_middleware(MoesifMiddleware, settings=moesif_settings)
+
+class Item(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+    tax: Optional[float] = None
+
+
+@app.post("/items")
+async def create_item(item: Item):
+    return item
 
 @app.get("/v2")
 async def read_main():

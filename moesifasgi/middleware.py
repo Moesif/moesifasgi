@@ -13,6 +13,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from moesifpythonrequest.start_capture.start_capture import StartCapture
+from starlette.types import Message
 import logging
 import math
 import random
@@ -36,7 +37,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.DEBUG = self.moesif_settings.get('DEBUG', False)
         if self.DEBUG:
             Configuration.BASE_URI = self.moesif_settings.get('BASE_URI', 'https://api.moesif.net')
-        Configuration.version = 'moesifasgi-python/0.0.1'
+        Configuration.version = 'moesifasgi-python/0.0.2'
         if self.moesif_settings.get('CAPTURE_OUTGOING_REQUESTS', False):
             try:
                 if self.DEBUG:
@@ -131,7 +132,23 @@ class MoesifMiddleware(BaseHTTPMiddleware):
     def update_companies_batch(self, companies_profiles):
         Company().update_companies_batch(companies_profiles, self.api_client, self.DEBUG)
 
+    async def set_body(self, request):
+        receive_ = await request._receive()
+
+        async def receive() -> Message:
+            return receive_
+
+        request._receive = receive
+
     async def dispatch(self, request, call_next):
+
+        await self.set_body(request)
+
+        # Read Request Body
+        request_body = None
+        if self.LOG_BODY:
+            request_body = await request.body()
+
         # Call the next middleware
         response = await call_next(request)
 
@@ -143,11 +160,6 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                                                                                self.logger_helper.get_company_id(self.moesif_settings, request, response, self.DEBUG))
 
             if self.sampling_percentage >= random_percentage:
-                # Read Request Body
-                request_body = None
-                if self.LOG_BODY:
-                    request_body = await request.body()
-
                 # Prepare Event Request Model
                 event_req = self.event_mapper.to_request(request, request_body, self.api_version, self.disable_transaction_id)
 
@@ -156,7 +168,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                 if self.LOG_BODY:
                     # Consuming FastAPI response and grabbing body here
                     resp_body = [section async for section in response.__dict__['body_iterator']]
-                    # Repairing FastAPI response
+                    # Preparing FastAPI response
                     response.__setattr__('body_iterator', async_iterator_wrapper(resp_body))
 
                 # Prepare Event Response Model
