@@ -1,4 +1,5 @@
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 from datetime import datetime, timedelta
 from moesifapi.moesif_api_client import *
 from .send_batch_events import SendEventAsync
@@ -37,7 +38,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.DEBUG = self.moesif_settings.get('DEBUG', False)
         if self.DEBUG:
             Configuration.BASE_URI = self.moesif_settings.get('BASE_URI', 'https://api.moesif.net')
-        Configuration.version = 'moesifasgi-python/0.0.2'
+        Configuration.version = 'moesifasgi-python/0.0.3'
         if self.moesif_settings.get('CAPTURE_OUTGOING_REQUESTS', False):
             try:
                 if self.DEBUG:
@@ -132,22 +133,22 @@ class MoesifMiddleware(BaseHTTPMiddleware):
     def update_companies_batch(self, companies_profiles):
         Company().update_companies_batch(companies_profiles, self.api_client, self.DEBUG)
 
-    async def set_body(self, request):
-        receive_ = await request._receive()
-
+    def set_body(self, request: Request, body: bytes):
         async def receive() -> Message:
-            return receive_
+            return {"type": "http.request", "body": body}
 
         request._receive = receive
 
+    async def get_body(self, request: Request) -> bytes:
+        body = await request.body()
+        self.set_body(request, body)
+        return body
+
     async def dispatch(self, request, call_next):
-
-        await self.set_body(request)
-
         # Read Request Body
         request_body = None
         if self.LOG_BODY:
-            request_body = await request.body()
+            request_body = await self.get_body(request)
 
         # Call the next middleware
         response = await call_next(request)
