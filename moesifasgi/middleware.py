@@ -153,7 +153,8 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         # Call the next middleware
         response = await call_next(request)
 
-        if not self.logger_helper.should_skip(self.moesif_settings, request, response, self.DEBUG):
+        skip = await self.logger_helper.should_skip(self.moesif_settings, request, response, self.DEBUG)
+        if not skip:
             random_percentage = random.random() * 100
 
             self.sampling_percentage = self.app_config.get_sampling_percentage(self.config,
@@ -175,11 +176,11 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                 # Prepare Event Response Model
                 event_rsp = self.event_mapper.to_response(response, resp_body)
                 # Prepare Event Model
-                event_data = self.event_mapper.to_event(request, response, event_req, event_rsp, self.moesif_settings,
+                event_data = await self.event_mapper.to_event(request, response, event_req, event_rsp, self.moesif_settings,
                                                          self.DEBUG)
 
                 # Mask Event Model
-                event_data = self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
+                event_data = await self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
 
                 if event_data:
                     # Add Weight to the event

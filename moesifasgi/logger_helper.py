@@ -43,12 +43,12 @@ class LoggerHelper:
                 print(e)
         return None
 
-    def get_user_id(self, middleware_settings, request, response, request_headers, debug):
+    async def get_user_id(self, middleware_settings, request, response, request_headers, debug):
         user_id = None
         try:
             identify_user = middleware_settings.get('IDENTIFY_USER', None)
             if identify_user is not None:
-                user_id = identify_user(request, response)
+                user_id = await identify_user(request, response)
             if not user_id:
                 # Transform request headers keys to lower case
                 request_headers = {k.lower(): v for k, v in request_headers.items()}
@@ -113,12 +113,12 @@ class LoggerHelper:
         return user_id
 
     @classmethod
-    def get_company_id(cls, middleware_settings, request, response, debug):
+    async def get_company_id(cls, middleware_settings, request, response, debug):
         company_id = None
         try:
             identify_company = middleware_settings.get('IDENTIFY_COMPANY', None)
             if identify_company is not None:
-                company_id = identify_company(request, response)
+                company_id = await identify_company(request, response)
         except Exception as e:
             if debug:
                 print("can not execute identify_company function, please check moesif settings.")
@@ -126,12 +126,12 @@ class LoggerHelper:
         return company_id
 
     @classmethod
-    def get_metadata(cls, middleware_settings, request, response, debug):
+    async def get_metadata(cls, middleware_settings, request, response, debug):
         metadata = None
         try:
             get_metadata = middleware_settings.get('GET_METADATA', None)
             if get_metadata is not None:
-                metadata = get_metadata(request, response)
+                metadata = await get_metadata(request, response)
         except Exception as e:
             if debug:
                 print("can not execute get_metadata function, please check moesif settings.")
@@ -139,12 +139,12 @@ class LoggerHelper:
         return metadata
 
     @classmethod
-    def get_session_token(cls, middleware_settings, request, response, debug):
+    async def get_session_token(cls, middleware_settings, request, response, debug):
         session_token = None
         try:
             get_session_token = middleware_settings.get('GET_SESSION_TOKEN', None)
             if get_session_token is not None:
-                session_token = get_session_token(request, response)
+                session_token = await get_session_token(request, response)
         except Exception as e:
             if debug:
                 print("Can not execute get_session_token function. Please check moesif settings.")
@@ -152,11 +152,11 @@ class LoggerHelper:
         return session_token
 
     @classmethod
-    def should_skip(cls, middleware_settings, request, response, debug):
+    async def should_skip(cls, middleware_settings, request, response, debug):
         try:
             skip_proc = middleware_settings.get("SKIP")
             if skip_proc is not None:
-                return skip_proc(request, response)
+                return await skip_proc(request, response)
             else:
                 return False
         except Exception as e:
@@ -165,11 +165,11 @@ class LoggerHelper:
             return False
 
     @classmethod
-    def mask_event(cls, event_model, middleware_settings, debug):
+    async def mask_event(cls, event_model, middleware_settings, debug):
         try:
             mask_event_model = middleware_settings.get("MASK_EVENT_MODEL")
             if mask_event_model is not None:
-                return mask_event_model(event_model)
+                return await mask_event_model(event_model)
         except Exception as e:
             if debug:
                 print("Can not execute MASK_EVENT_MODEL function. Please check moesif settings.")

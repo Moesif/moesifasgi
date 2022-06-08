@@ -5,35 +5,58 @@ from typing import Optional
 from pydantic import BaseModel
 import json
 
-
-def identify_user(request, response):
+async def custom_identify_user():
     # Your custom code that returns a user id string
     return "12345"
 
-def identify_company(request, response):
+async def identify_user(request, response):
+    result = await custom_identify_user()
+    return result
+
+async def async_identify_company():
     # Your custom code that returns a company id string
     return "67890"
 
-def get_token(request, response):
+async def identify_company(request, response):
+    result = await custom_identify_company()
+    return result
+
+async def custom_get_token():
     # If you don't want to use the standard ASGI session token,
     # add your custom code that returns a string for session/API token
     return "XXXXXXXXXXXXXX"
 
-def get_metadata(request, response):
+async def get_token(request, response):
+    result = await custom_get_token()
+    return result
+
+async def custom_get_metadata():
     return {
         'datacenter': 'westus',
         'deployment_version': 'v1.2.3',
     }
 
-def should_skip(request, response):
+async def get_metadata(request, response):
+    result = await custom_get_metadata()
+    return result
+
+async def custom_should_skip(request):
     # Your custom code that returns true to skip logging
     return "health/probe" in request.url._url
 
-def mask_event(eventmodel):
+async def should_skip(request, response):
+    result = await custom_should_skip(request)
+    return result
+
+async def custom_mask_event(eventmodel):
     # Your custom code to change or remove any sensitive fields
     if 'password' in eventmodel.response.body:
         eventmodel.response.body['password'] = None
     return eventmodel
+
+async def mask_event(eventmodel):
+    result = await custom_mask_event(eventmodel)
+    return result
 
 moesif_settings = {
     'APPLICATION_ID': 'Your Moesif Application Id',
