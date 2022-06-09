@@ -17,13 +17,13 @@ class EventMapper:
     def get_time(cls):
         return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
-    def to_event(self, request, response, event_req, event_rsp, moesif_settings, debug):
+    async def to_event(self, request, response, event_req, event_rsp, moesif_settings, debug):
         return EventModel(request=event_req,
                           response=event_rsp,
-                          user_id=self.logger_helper.get_user_id(moesif_settings, request, response, dict(request.headers), debug),
-                          company_id=self.logger_helper.get_company_id(moesif_settings, request, response, debug),
-                          session_token=self.logger_helper.get_session_token(moesif_settings, request, response, debug),
-                          metadata=self.logger_helper.get_metadata(moesif_settings, request, response, debug),
+                          user_id=await self.logger_helper.get_user_id(moesif_settings, request, response, dict(request.headers), debug),
+                          company_id=await self.logger_helper.get_company_id(moesif_settings, request, response, debug),
+                          session_token=await self.logger_helper.get_session_token(moesif_settings, request, response, debug),
+                          metadata=await self.logger_helper.get_metadata(moesif_settings, request, response, debug),
                           direction="Incoming")
 
     def to_request(self, request, request_body, api_version, disable_capture_transaction_id):
