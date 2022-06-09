@@ -36,11 +36,11 @@ async def identify_company(request, response):
 def identify_company(request, response):
     return custom_company
 
+# If you don't want to use the standard ASGI session token,
+# add your custom code that returns a string for session/API token
 custom_session_token = "XXXXXXXXXXXXXX"
 
 async def custom_get_token():
-    # If you don't want to use the standard ASGI session token,
-    # add your custom code that returns a string for session/API token
     return custom_session_token
 
 # get session token using async mode
@@ -69,10 +69,10 @@ async def get_metadata(request, response):
 def get_metadata(request, response):
     return custom_metadata
 
+# Your custom code that returns true to skip logging
 skip_route = "health/probe"
 
 async def custom_should_skip(request):
-    # Your custom code that returns true to skip logging
     return skip_route in request.url._url
 
 # should skip check using async mode

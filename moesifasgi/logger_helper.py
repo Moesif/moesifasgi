@@ -22,6 +22,10 @@ class LoggerHelper:
     def split_token(cls, token):
         return token.split('.')
 
+    @classmethod
+    def is_coroutine_function(cls, function_name):
+        return inspect.iscoroutinefunction(function_name)
+
     def parse_authorization_header(self, token, field, debug):
         try:
             # Fix the padding issue before decoding
@@ -49,7 +53,7 @@ class LoggerHelper:
         try:
             identify_user = middleware_settings.get('IDENTIFY_USER', None)
             if identify_user is not None:
-                if LoggerHelper.is_coroutine_function(identify_user):
+                if self.is_coroutine_function(identify_user):
                     user_id = await identify_user(request, response)
                 else:
                     user_id = identify_user(request, response)
@@ -116,13 +120,12 @@ class LoggerHelper:
                 print(e)
         return user_id
 
-    @classmethod
-    async def get_company_id(cls, middleware_settings, request, response, debug):
+    async def get_company_id(self, middleware_settings, request, response, debug):
         company_id = None
         try:
             identify_company = middleware_settings.get('IDENTIFY_COMPANY', None)
             if identify_company is not None:
-                if LoggerHelper.is_coroutine_function(identify_company):
+                if self.is_coroutine_function(identify_company):
                     company_id = await identify_company(request, response)
                 else:
                     company_id = identify_company(request, response)
@@ -132,13 +135,12 @@ class LoggerHelper:
                 print(e)
         return company_id
 
-    @classmethod
-    async def get_metadata(cls, middleware_settings, request, response, debug):
+    async def get_metadata(self, middleware_settings, request, response, debug):
         metadata = None
         try:
             get_metadata = middleware_settings.get('GET_METADATA', None)
             if get_metadata is not None:
-                if LoggerHelper.is_coroutine_function(get_metadata):
+                if self.is_coroutine_function(get_metadata):
                     metadata = await get_metadata(request, response)
                 else:
                     metadata = get_metadata(request, response)
@@ -148,13 +150,12 @@ class LoggerHelper:
                 print(e)
         return metadata
 
-    @classmethod
-    async def get_session_token(cls, middleware_settings, request, response, debug):
+    async def get_session_token(self, middleware_settings, request, response, debug):
         session_token = None
         try:
             get_session_token = middleware_settings.get('GET_SESSION_TOKEN', None)
             if get_session_token is not None:
-                if LoggerHelper.is_coroutine_function(get_session_token):
+                if self.is_coroutine_function(get_session_token):
                     session_token = await get_session_token(request, response)
                 else:
                     session_token = get_session_token(request, response)
@@ -164,12 +165,11 @@ class LoggerHelper:
                 print(e)
         return session_token
 
-    @classmethod
-    async def should_skip(cls, middleware_settings, request, response, debug):
+    async def should_skip(self, middleware_settings, request, response, debug):
         try:
             skip_proc = middleware_settings.get("SKIP")
             if skip_proc is not None:
-                if LoggerHelper.is_coroutine_function(skip_proc):
+                if self.is_coroutine_function(skip_proc):
                     return await skip_proc(request, response)
                 else:
                     return skip_proc(request, response)
@@ -180,12 +180,11 @@ class LoggerHelper:
                 print("error trying to execute skip function.")
             return False
 
-    @classmethod
-    async def mask_event(cls, event_model, middleware_settings, debug):
+    async def mask_event(self, event_model, middleware_settings, debug):
         try:
             mask_event_model = middleware_settings.get("MASK_EVENT_MODEL")
             if mask_event_model is not None:
-                if LoggerHelper.is_coroutine_function(mask_event_model):
+                if self.is_coroutine_function(mask_event_model):
                     event_model = await mask_event_model(event_model)
                 else:
                     event_model = mask_event_model(event_model)
@@ -193,7 +192,3 @@ class LoggerHelper:
             if debug:
                 print("Can not execute MASK_EVENT_MODEL function. Please check moesif settings.")
         return event_model
-
-    @classmethod
-    def is_coroutine_function(cls, function_name):
-        return inspect.iscoroutinefunction(function_name)
