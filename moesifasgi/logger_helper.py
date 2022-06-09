@@ -49,7 +49,7 @@ class LoggerHelper:
         try:
             identify_user = middleware_settings.get('IDENTIFY_USER', None)
             if identify_user is not None:
-                if inspect.iscoroutinefunction(identify_user):
+                if LoggerHelper.is_coroutine_function(identify_user):
                     user_id = await identify_user(request, response)
                 else:
                     user_id = identify_user(request, response)
@@ -122,7 +122,7 @@ class LoggerHelper:
         try:
             identify_company = middleware_settings.get('IDENTIFY_COMPANY', None)
             if identify_company is not None:
-                if inspect.iscoroutinefunction(identify_company):
+                if LoggerHelper.is_coroutine_function(identify_company):
                     company_id = await identify_company(request, response)
                 else:
                     company_id = identify_company(request, response)
@@ -138,7 +138,7 @@ class LoggerHelper:
         try:
             get_metadata = middleware_settings.get('GET_METADATA', None)
             if get_metadata is not None:
-                if inspect.iscoroutinefunction(get_metadata):
+                if LoggerHelper.is_coroutine_function(get_metadata):
                     metadata = await get_metadata(request, response)
                 else:
                     metadata = get_metadata(request, response)
@@ -154,7 +154,7 @@ class LoggerHelper:
         try:
             get_session_token = middleware_settings.get('GET_SESSION_TOKEN', None)
             if get_session_token is not None:
-                if inspect.iscoroutinefunction(get_session_token):
+                if LoggerHelper.is_coroutine_function(get_session_token):
                     session_token = await get_session_token(request, response)
                 else:
                     session_token = get_session_token(request, response)
@@ -169,7 +169,7 @@ class LoggerHelper:
         try:
             skip_proc = middleware_settings.get("SKIP")
             if skip_proc is not None:
-                if inspect.iscoroutinefunction(skip_proc):
+                if LoggerHelper.is_coroutine_function(skip_proc):
                     return await skip_proc(request, response)
                 else:
                     return skip_proc(request, response)
@@ -185,7 +185,7 @@ class LoggerHelper:
         try:
             mask_event_model = middleware_settings.get("MASK_EVENT_MODEL")
             if mask_event_model is not None:
-                if inspect.iscoroutinefunction(mask_event_model):
+                if LoggerHelper.is_coroutine_function(mask_event_model):
                     event_model = await mask_event_model(event_model)
                 else:
                     event_model = mask_event_model(event_model)
@@ -193,3 +193,7 @@ class LoggerHelper:
             if debug:
                 print("Can not execute MASK_EVENT_MODEL function. Please check moesif settings.")
         return event_model
+
+    @classmethod
+    def is_coroutine_function(cls, function_name):
+        return inspect.iscoroutinefunction(function_name)

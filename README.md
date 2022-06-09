@@ -141,34 +141,98 @@ but different frameworks and your implementation might be very different, it wou
 ### Example:
 
 ```python
+# Your custom code that returns a user id string
+custom_user = "12345"
+
+async def custom_identify_user():
+    return custom_user
+
+# identify user using async mode
+async def identify_user(request, response):
+    user = await custom_identify_user()
+    return user
+
+# identify user not using async mode
 def identify_user(request, response):
-    # Your custom code that returns a user id string
-    return "12345"
+    return custom_user
 
+# Your custom code that returns a company id string
+custom_company = "67890"
+
+async def custom_identify_company():
+    return custom_company
+
+# identify company using async mode
+async def identify_company(request, response):
+    company = await custom_identify_company
+    return company
+
+# identify company not using async mode
 def identify_company(request, response):
-    # Your custom code that returns a company id string
-    return "67890"
+    return custom_company
 
-def should_skip(request, response):
-    # Your custom code that returns true to skip logging
-    return "health/probe" in request.url._url
+custom_session_token = "XXXXXXXXXXXXXX"
 
-def get_token(request, response):
+async def custom_get_token():
     # If you don't want to use the standard ASGI session token,
     # add your custom code that returns a string for session/API token
-    return "XXXXXXXXXXXXXX"
+    return custom_session_token
 
-def mask_event(eventmodel):
+# get session token using async mode
+async def get_token(request, response):
+    result = await custom_get_token()
+    return result
+
+# get session token not using async mode
+def get_token(request, response):
+    return custom_session_token
+
+custom_metadata = {
+    'datacenter': 'westus',
+    'deployment_version': 'v1.2.3',
+}
+
+async def custom_get_metadata():
+    return custom_metadata
+
+# get metadata using async mode
+async def get_metadata(request, response):
+    result = await custom_get_metadata()
+    return result
+
+# get metadata not using async mode
+def get_metadata(request, response):
+    return custom_metadata
+
+skip_route = "health/probe"
+
+async def custom_should_skip(request):
+    # Your custom code that returns true to skip logging
+    return skip_route in request.url._url
+
+# should skip check using async mode
+async def should_skip(request, response):
+    result = await custom_should_skip(request)
+    return result
+
+# should skip check not using async mode
+def should_skip(request, response):
+    return skip_route in request.url._url
+
+def custom_mask_event(eventmodel):
     # Your custom code to change or remove any sensitive fields
     if 'password' in eventmodel.response.body:
         eventmodel.response.body['password'] = None
     return eventmodel
 
-def get_metadata(request, response):
-    return {
-        'datacenter': 'westus',
-        'deployment_version': 'v1.2.3',
-    }
+# mask event using async mode
+async def mask_event(eventmodel):
+    return custom_mask_event(eventmodel)
+
+# mask event not using async mode
+def mask_event(eventmodel):
+    return custom_mask_event(eventmodel)
+
 
 moesif_settings = {
     'APPLICATION_ID': 'Your Moesif Application Id',
