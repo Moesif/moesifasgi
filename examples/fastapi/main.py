@@ -29,7 +29,7 @@ async def custom_identify_company():
 
 # identify company using async mode
 async def identify_company(request, response):
-    company = await custom_identify_company
+    company = await custom_identify_company()
     return company
 
 # identify company not using async mode
