@@ -180,7 +180,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                                                          self.DEBUG)
 
                 # Mask Event Model
-                if LoggerHelper.is_coroutine_function(self.logger_helper.mask_event):
+                if self.logger_helper.is_coroutine_function(self.logger_helper.mask_event):
                     event_data = await self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
                 else:
                     event_data = self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
