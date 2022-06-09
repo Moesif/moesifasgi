@@ -20,6 +20,7 @@ import math
 import random
 import queue
 import atexit
+import inspect
 
 
 class MoesifMiddleware(BaseHTTPMiddleware):
@@ -158,8 +159,8 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             random_percentage = random.random() * 100
 
             self.sampling_percentage = self.app_config.get_sampling_percentage(self.config,
-                                                                               self.logger_helper.get_user_id(self.moesif_settings, request, response, request.headers, self.DEBUG),
-                                                                               self.logger_helper.get_company_id(self.moesif_settings, request, response, self.DEBUG))
+                                                                               await self.logger_helper.get_user_id(self.moesif_settings, request, response, request.headers, self.DEBUG),
+                                                                               await self.logger_helper.get_company_id(self.moesif_settings, request, response, self.DEBUG))
 
             if self.sampling_percentage >= random_percentage:
                 # Prepare Event Request Model
@@ -180,7 +181,10 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                                                          self.DEBUG)
 
                 # Mask Event Model
-                event_data = await self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
+                if inspect.iscoroutinefunction(self.logger_helper.mask_event):
+                    event_data = await self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
+                else:
+                    event_data = self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
 
                 if event_data:
                     # Add Weight to the event

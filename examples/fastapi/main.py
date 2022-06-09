@@ -5,58 +5,86 @@ from typing import Optional
 from pydantic import BaseModel
 import json
 
+# Your custom code that returns a user id string
+custom_user = "12345"
+
 async def custom_identify_user():
-    # Your custom code that returns a user id string
-    return "12345"
+    return custom_user
 
 async def identify_user(request, response):
-    result = await custom_identify_user()
-    return result
+    user = await custom_identify_user()
+    return user
 
-async def async_identify_company():
-    # Your custom code that returns a company id string
-    return "67890"
+def identify_user(request, response):
+    return custom_user
+
+# Your custom code that returns a company id string
+custom_company = "67890"
+
+async def custom_identify_company():
+    return custom_company
 
 async def identify_company(request, response):
-    result = await custom_identify_company()
-    return result
+    company = await custom_identify_company
+    return company
+
+def identify_company(request, response):
+    return custom_company
+
+custom_session_token = "XXXXXXXXXXXXXX"
 
 async def custom_get_token():
     # If you don't want to use the standard ASGI session token,
     # add your custom code that returns a string for session/API token
-    return "XXXXXXXXXXXXXX"
+    return custom_session_token
 
 async def get_token(request, response):
     result = await custom_get_token()
     return result
 
+def get_token(request, response):
+    return custom_session_token
+
+custom_metadata = {
+    'datacenter': 'westus',
+    'deployment_version': 'v1.2.3',
+}
+
 async def custom_get_metadata():
-    return {
-        'datacenter': 'westus',
-        'deployment_version': 'v1.2.3',
-    }
+    return custom_metadata
 
 async def get_metadata(request, response):
     result = await custom_get_metadata()
     return result
 
+def get_metadata(request, response):
+    return custom_metadata
+
+skip_route = "health/probe"
+
 async def custom_should_skip(request):
     # Your custom code that returns true to skip logging
-    return "health/probe" in request.url._url
+    return skip_route in request.url._url
 
 async def should_skip(request, response):
     result = await custom_should_skip(request)
     return result
 
-async def custom_mask_event(eventmodel):
+def should_skip(request, response):
+    return skip_route in request.url._url
+
+def custom_mask_event(eventmodel):
     # Your custom code to change or remove any sensitive fields
     if 'password' in eventmodel.response.body:
         eventmodel.response.body['password'] = None
     return eventmodel
 
 async def mask_event(eventmodel):
-    result = await custom_mask_event(eventmodel)
-    return result
+    return custom_mask_event(eventmodel)
+
+def mask_event(eventmodel):
+    # Your custom code to change or remove any sensitive fields
+    return custom_mask_event(eventmodel)
 
 moesif_settings = {
     'APPLICATION_ID': 'Your Moesif Application Id',

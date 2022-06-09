@@ -1,3 +1,4 @@
+import inspect
 import json
 import base64
 
@@ -48,7 +49,10 @@ class LoggerHelper:
         try:
             identify_user = middleware_settings.get('IDENTIFY_USER', None)
             if identify_user is not None:
-                user_id = await identify_user(request, response)
+                if inspect.iscoroutinefunction(identify_user):
+                    user_id = await identify_user(request, response)
+                else:
+                    user_id = identify_user(request, response)
             if not user_id:
                 # Transform request headers keys to lower case
                 request_headers = {k.lower(): v for k, v in request_headers.items()}
@@ -118,7 +122,10 @@ class LoggerHelper:
         try:
             identify_company = middleware_settings.get('IDENTIFY_COMPANY', None)
             if identify_company is not None:
-                company_id = await identify_company(request, response)
+                if inspect.iscoroutinefunction(identify_company):
+                    company_id = await identify_company(request, response)
+                else:
+                    company_id = identify_company(request, response)
         except Exception as e:
             if debug:
                 print("can not execute identify_company function, please check moesif settings.")
@@ -131,7 +138,10 @@ class LoggerHelper:
         try:
             get_metadata = middleware_settings.get('GET_METADATA', None)
             if get_metadata is not None:
-                metadata = await get_metadata(request, response)
+                if inspect.iscoroutinefunction(get_metadata):
+                    metadata = await get_metadata(request, response)
+                else:
+                    metadata = get_metadata(request, response)
         except Exception as e:
             if debug:
                 print("can not execute get_metadata function, please check moesif settings.")
@@ -144,7 +154,10 @@ class LoggerHelper:
         try:
             get_session_token = middleware_settings.get('GET_SESSION_TOKEN', None)
             if get_session_token is not None:
-                session_token = await get_session_token(request, response)
+                if inspect.iscoroutinefunction(get_session_token):
+                    session_token = await get_session_token(request, response)
+                else:
+                    session_token = get_session_token(request, response)
         except Exception as e:
             if debug:
                 print("Can not execute get_session_token function. Please check moesif settings.")
@@ -156,7 +169,10 @@ class LoggerHelper:
         try:
             skip_proc = middleware_settings.get("SKIP")
             if skip_proc is not None:
-                return await skip_proc(request, response)
+                if inspect.iscoroutinefunction(skip_proc):
+                    return await skip_proc(request, response)
+                else:
+                    return skip_proc(request, response)
             else:
                 return False
         except Exception as e:
@@ -169,7 +185,10 @@ class LoggerHelper:
         try:
             mask_event_model = middleware_settings.get("MASK_EVENT_MODEL")
             if mask_event_model is not None:
-                return await mask_event_model(event_model)
+                if inspect.iscoroutinefunction(mask_event_model):
+                    event_model = await mask_event_model(event_model)
+                else:
+                    event_model = mask_event_model(event_model)
         except Exception as e:
             if debug:
                 print("Can not execute MASK_EVENT_MODEL function. Please check moesif settings.")
