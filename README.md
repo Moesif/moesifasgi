@@ -253,6 +253,7 @@ app.add_middleware(MoesifMiddleware, settings=moesif_settings)
 
 ```
 
+**`OAuth2`** can also been used [more info(https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/)
 ## Tested versions
 
 Moesif has validated `Moesif.Middleware` against the following framework.
