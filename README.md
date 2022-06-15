@@ -253,6 +253,18 @@ app.add_middleware(MoesifMiddleware, settings=moesif_settings)
 
 ```
 
+## Tested versions
+
+Moesif has validated `Moesif.Middleware` against the following framework.
+
+|         | Framework Version |
+|---------|-------------------|
+| nose | 1.3.7             |
+| moesifapi | 1.3.3             |
+| moesifpythonrequest | 0.2.0             |
+| starlette | 0.16.0            |
+| fastapi | 0.70.0            |
+
 ## Other integrations
 
 To view more documentation on integration options, please visit __[the Integration Options Documentation](https://www.moesif.com/docs/getting-started/integration-options/).__

@@ -46,6 +46,7 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
+# hash password
 def get_password_hash(password):
     hashed = pwd_context.hash(password)
     return hashed
@@ -66,6 +67,7 @@ def authenticate_user(fake_db, username: str, password: str):
     return user
 
 
+# Create a random secret key that will be used to sign the JWT tokens
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None):
     to_encode = data.copy()
     if expires_delta:
@@ -88,6 +90,8 @@ fake_users_db = {
 }
 
 
+# Decode the received token, verify it, and return the current user
+# If the token is invalid, return an HTTP error right away.
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -116,18 +120,23 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-custom_user = "12345"
+custom_user_id = "12345"
 
-async def custom_identify_user():
-    return custom_user
+
+async def custom_identify_user_id():
+    return custom_user_id
+
 
 # identify user using async mode
 async def identify_user(request, response):
-    return None
+    user_id = await custom_identify_user_id()
+    return user_id
 
-# # identify user not using async mode
-# def identify_user(request, response):
-#     return custom_user
+
+# identify user not using async mode
+def identify_user(request, response):
+    return custom_user_id
+
 
 # Your custom code that returns a company id string
 custom_company = "67890"
@@ -262,5 +271,5 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
 # in case you need run with debugger, those lines are needed
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+# if __name__ == "__main__":
+#     uvicorn.run(app, host="127.0.0.1", port=8000)
