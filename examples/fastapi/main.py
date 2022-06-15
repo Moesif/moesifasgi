@@ -139,19 +139,19 @@ def identify_user(request, response):
 
 
 # Your custom code that returns a company id string
-custom_company = "67890"
+custom_company_id = "67890"
 
-async def custom_identify_company():
-    return custom_company
+async def custom_identify_company_id():
+    return custom_company_id
 
 # identify company using async mode
 async def identify_company(request, response):
-    company = await custom_identify_company()
+    company = await custom_identify_company_id()
     return company
 
 # identify company not using async mode
-def identify_company(request, response):
-    return custom_company
+# def identify_company(request, response):
+#     return custom_company_id
 
 # If you don't want to use the standard ASGI session token,
 # add your custom code that returns a string for session/API token
