@@ -150,8 +150,8 @@ async def identify_company(request, response):
     return company
 
 # identify company not using async mode
-# def identify_company(request, response):
-#     return custom_company_id
+def identify_company(request, response):
+    return custom_company_id
 
 # If you don't want to use the standard ASGI session token,
 # add your custom code that returns a string for session/API token
