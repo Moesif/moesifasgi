@@ -260,10 +260,6 @@ Moesif has validated `Moesif.Middleware` against the following framework.
 
 |         | Framework Version |
 |---------|-------------------|
-| nose | 1.3.7             |
-| moesifapi | 1.3.3             |
-| moesifpythonrequest | 0.2.0             |
-| starlette | 0.16.0            |
 | fastapi | 0.70.0            |
 
 ## Other integrations
