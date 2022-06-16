@@ -13,3 +13,5 @@ cryptography==37.0.2
 cffi==1.15.0
 six==1.16.0
 pycparser==2.21
+bcrypt
+python-multipart
