@@ -26,9 +26,7 @@ class EventMapper:
                           metadata=await self.logger_helper.get_metadata(moesif_settings, request, response, debug),
                           direction="Incoming")
 
-    def to_request(self, request, request_body, api_version, disable_capture_transaction_id):
-        # Request time
-        request_time = self.get_time()
+    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id):
         # Request URI
         request_uri = request.url._url
         # Request Verb
@@ -63,9 +61,7 @@ class EventMapper:
                                  body=req_body,
                                  transfer_encoding=req_transfer_encoding)
 
-    def to_response(self, response, response_body):
-        # Response time
-        response_time = self.get_time()
+    def to_response(self, response, response_time, response_body):
         # Response Status code
         response_status = response.status_code
         # Response Headers
