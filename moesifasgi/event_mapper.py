@@ -13,10 +13,6 @@ class EventMapper:
         self.client_ip = ClientIp()
         self.transaction_id = None
 
-    @classmethod
-    def get_time(cls):
-        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
     async def to_event(self, request, response, event_req, event_rsp, moesif_settings, debug):
         return EventModel(request=event_req,
                           response=event_rsp,
@@ -26,9 +22,7 @@ class EventMapper:
                           metadata=await self.logger_helper.get_metadata(moesif_settings, request, response, debug),
                           direction="Incoming")
 
-    def to_request(self, request, request_body, api_version, disable_capture_transaction_id):
-        # Request time
-        request_time = self.get_time()
+    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id):
         # Request URI
         request_uri = request.url._url
         # Request Verb
@@ -63,9 +57,7 @@ class EventMapper:
                                  body=req_body,
                                  transfer_encoding=req_transfer_encoding)
 
-    def to_response(self, response, response_body):
-        # Response time
-        response_time = self.get_time()
+    def to_response(self, response, response_time, response_body):
         # Response Status code
         response_status = response.status_code
         # Response Headers
