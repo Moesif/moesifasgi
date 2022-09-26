@@ -13,10 +13,6 @@ class EventMapper:
         self.client_ip = ClientIp()
         self.transaction_id = None
 
-    @classmethod
-    def get_time(cls):
-        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
     async def to_event(self, request, response, event_req, event_rsp, moesif_settings, debug):
         return EventModel(request=event_req,
                           response=event_rsp,
