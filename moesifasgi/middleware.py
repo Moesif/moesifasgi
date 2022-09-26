@@ -144,7 +144,16 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.set_body(request, body)
         return body
 
+    @classmethod
+    def get_time(cls):
+        return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
     async def dispatch(self, request, call_next):
+        # request time
+        request_time = self.get_time()
+        if self.DEBUG:
+            print("event request time: ", request_time)
+
         # Read Request Body
         request_body = None
         if self.LOG_BODY:
@@ -152,6 +161,11 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
         # Call the next middleware
         response = await call_next(request)
+
+        # response time
+        response_time = self.get_time()
+        if self.DEBUG:
+            print("event response time: ", response_time)
 
         skip = await self.logger_helper.should_skip(self.moesif_settings, request, response, self.DEBUG)
         if not skip:
@@ -163,7 +177,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
             if self.sampling_percentage >= random_percentage:
                 # Prepare Event Request Model
-                event_req = self.event_mapper.to_request(request, request_body, self.api_version, self.disable_transaction_id)
+                event_req = self.event_mapper.to_request(request, request_time, request_body, self.api_version, self.disable_transaction_id)
 
                 # Read Response Body
                 resp_body = None
@@ -174,7 +188,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                     response.__setattr__('body_iterator', async_iterator_wrapper(resp_body))
 
                 # Prepare Event Response Model
-                event_rsp = self.event_mapper.to_response(response, resp_body)
+                event_rsp = self.event_mapper.to_response(response, response_time, resp_body)
                 # Prepare Event Model
                 event_data = await self.event_mapper.to_event(request, response, event_req, event_rsp, self.moesif_settings,
                                                          self.DEBUG)
