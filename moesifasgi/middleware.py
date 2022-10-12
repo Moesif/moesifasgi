@@ -3,7 +3,7 @@ from starlette.requests import Request
 from datetime import datetime, timedelta
 from moesifapi.moesif_api_client import *
 from .send_batch_events import SendEventAsync
-from .app_config import AppConfig
+from moesifpythonrequest.app_config.app_config import AppConfig
 from .async_iterator_wrapper import async_iterator_wrapper
 from .logger_helper import LoggerHelper
 from .parse_body import ParseBody
@@ -167,39 +167,43 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         if self.DEBUG:
             print("event response time: ", response_time)
 
-        skip = await self.logger_helper.should_skip(self.moesif_settings, request, response, self.DEBUG)
-        if not skip:
-            random_percentage = random.random() * 100
+            # Prepare Event Request Model
+        event_req = self.event_mapper.to_request(request, request_time, request_body, self.api_version,
+                                                 self.disable_transaction_id)
 
-            self.sampling_percentage = self.app_config.get_sampling_percentage(self.config,
-                                                                               await self.logger_helper.get_user_id(self.moesif_settings, request, response, request.headers, self.DEBUG),
-                                                                               await self.logger_helper.get_company_id(self.moesif_settings, request, response, self.DEBUG))
+        # Read Response Body
+        resp_body = None
+        if self.LOG_BODY:
+            # Consuming FastAPI response and grabbing body here
+            resp_body = [section async for section in response.__dict__['body_iterator']]
+            # Preparing FastAPI response
+            response.__setattr__('body_iterator', async_iterator_wrapper(resp_body))
 
-            if self.sampling_percentage >= random_percentage:
-                # Prepare Event Request Model
-                event_req = self.event_mapper.to_request(request, request_time, request_body, self.api_version, self.disable_transaction_id)
+        # Prepare Event Response Model
+        event_rsp = self.event_mapper.to_response(response, response_time, resp_body)
+        # Prepare Event Model
+        event_data = await self.event_mapper.to_event(request, response, event_req, event_rsp, self.moesif_settings,
+                                                      self.DEBUG)
 
-                # Read Response Body
-                resp_body = None
-                if self.LOG_BODY:
-                    # Consuming FastAPI response and grabbing body here
-                    resp_body = [section async for section in response.__dict__['body_iterator']]
-                    # Preparing FastAPI response
-                    response.__setattr__('body_iterator', async_iterator_wrapper(resp_body))
+        # Mask Event Model
+        if self.logger_helper.is_coroutine_function(self.logger_helper.mask_event):
+            event_data = await self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
+        else:
+            event_data = self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
 
-                # Prepare Event Response Model
-                event_rsp = self.event_mapper.to_response(response, response_time, resp_body)
-                # Prepare Event Model
-                event_data = await self.event_mapper.to_event(request, response, event_req, event_rsp, self.moesif_settings,
-                                                         self.DEBUG)
+        if event_data:
 
-                # Mask Event Model
-                if self.logger_helper.is_coroutine_function(self.logger_helper.mask_event):
-                    event_data = await self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
-                else:
-                    event_data = self.logger_helper.mask_event(event_data, self.moesif_settings, self.DEBUG)
+            skip = await self.logger_helper.should_skip(self.moesif_settings, request, response, self.DEBUG)
+            if not skip:
+                random_percentage = random.random() * 100
 
-                if event_data:
+                self.sampling_percentage = self.app_config.get_sampling_percentage(
+                    event_data,
+                    self.config,
+                    await self.logger_helper.get_user_id(self.moesif_settings, request, response, request.headers, self.DEBUG),
+                    await self.logger_helper.get_company_id(self.moesif_settings, request, response, self.DEBUG))
+
+                if self.sampling_percentage >= random_percentage:
                     # Add Weight to the event
                     event_data.weight = 1 if self.sampling_percentage == 0 else math.floor(100 / self.sampling_percentage)
                     try:
@@ -212,7 +216,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                             except Exception as ex:
                                 self.is_event_job_scheduled = False
                                 if self.DEBUG:
-                                    print('Error while starting the event scheduler job in background')
+                                    print('[moesif] Error while starting the event scheduler job in background')
                                     print(str(ex))
                         # Add Event to the queue
                         if self.DEBUG:
@@ -220,17 +224,17 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                         self.moesif_events_queue.put(event_data)
                     except Exception as ex:
                         if self.DEBUG:
-                            print("Error while adding event to the queue")
+                            print("[moesif] Error while adding event to the queue")
                             print(str(ex))
                 else:
                     if self.DEBUG:
-                        print('Skipped Event as the moesif event model is None')
+                        print("[moesif] Skipped Event due to sampling percentage: " + str(self.sampling_percentage)
+                              + " and random percentage: " + str(random_percentage))
             else:
                 if self.DEBUG:
-                    print("Skipped Event due to sampling percentage: " + str(self.sampling_percentage)
-                          + " and random percentage: " + str(random_percentage))
+                    print('[moesif] Skipped Event using should_skip configuration option')
         else:
             if self.DEBUG:
-                print('Skipped Event using should_skip configuration option')
+                print('[moesif] Skipped Event as the moesif event model is None')
 
         return response
