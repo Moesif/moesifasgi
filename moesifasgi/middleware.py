@@ -38,7 +38,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.DEBUG = self.moesif_settings.get('DEBUG', False)
         if self.DEBUG:
             Configuration.BASE_URI = self.moesif_settings.get('BASE_URI', 'https://api.moesif.net')
-        Configuration.version = 'moesifasgi-python/0.1.4'
+        Configuration.version = 'moesifasgi-python/0.1.5'
         if self.moesif_settings.get('CAPTURE_OUTGOING_REQUESTS', False):
             try:
                 if self.DEBUG:
