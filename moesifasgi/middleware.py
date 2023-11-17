@@ -56,7 +56,8 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.sampling_percentage = 100
         self.last_updated_time = datetime.utcnow()
         self.disable_transaction_id = self.moesif_settings.get('DISABLED_TRANSACTION_ID', False)
-        self.moesif_events_queue = queue.Queue()
+        self.event_queue_size = self.middleware_settings.get('EVENT_QUEUE_SIZE', 1000000)
+        self.moesif_events_queue = queue.Queue(maxsize=self.event_queue_size)
         self.BATCH_SIZE = self.moesif_settings.get('BATCH_SIZE', 25)
         self.last_event_job_run_time = datetime(1970, 1, 1, 0, 0)  # Assuming job never ran, set it to epoch start time
         self.scheduler = None
