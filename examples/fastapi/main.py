@@ -218,7 +218,7 @@ def mask_event(eventmodel):
 moesif_settings = {
     'APPLICATION_ID': 'Your Moesif Application Id',
     'LOG_BODY': True,
-    'DEBUG': True,
+    'DEBUG': False,
     'IDENTIFY_USER': identify_user,
     'IDENTIFY_COMPANY': identify_company,
     'GET_SESSION_TOKEN': get_token,
