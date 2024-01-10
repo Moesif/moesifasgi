@@ -3,7 +3,7 @@ uvicorn
 passlib==1.7.4
 moesifapi==1.4.1
 moesifpythonrequest==0.3.2
-fastapi==0.78.0
+fastapi==0.108.0
 jose==1.0.0
 python-jose==3.3.0
 rsa==4.8
