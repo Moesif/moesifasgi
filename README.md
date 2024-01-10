@@ -264,6 +264,7 @@ Moesif has validated `Moesif.Middleware` against the following framework.
 |         | Framework Version |
 |---------|-------------------|
 | fastapi | > 0.51.0 - 0.78.0 |
+| fastapi |  0.108.0          |
 
 ## Other integrations
 

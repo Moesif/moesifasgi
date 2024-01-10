@@ -15,6 +15,8 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from moesifpythonrequest.start_capture.start_capture import StartCapture
 from starlette.types import Message
+from importlib.metadata import version
+from distutils.version import LooseVersion
 import logging
 import math
 import random
@@ -56,7 +58,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.sampling_percentage = 100
         self.last_updated_time = datetime.utcnow()
         self.disable_transaction_id = self.moesif_settings.get('DISABLED_TRANSACTION_ID', False)
-        self.event_queue_size = self.middleware_settings.get('EVENT_QUEUE_SIZE', 1000000)
+        self.event_queue_size = self.moesif_settings.get('EVENT_QUEUE_SIZE', 1000000)
         self.moesif_events_queue = queue.Queue(maxsize=self.event_queue_size)
         self.BATCH_SIZE = self.moesif_settings.get('BATCH_SIZE', 25)
         self.last_event_job_run_time = datetime(1970, 1, 1, 0, 0)  # Assuming job never ran, set it to epoch start time
@@ -66,6 +68,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.is_event_job_scheduled = False
         self.api_version = self.moesif_settings.get('API_VERSION')
         self.LOG_BODY = self.moesif_settings.get('LOG_BODY', True)
+        self.starlette_version = version('starlette')
         try:
             if self.config:
                 self.config_etag, self.sampling_percentage, self.last_updated_time = self.app_config.parse_configuration(
@@ -142,7 +145,10 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     async def get_body(self, request: Request) -> bytes:
         body = await request.body()
-        self.set_body(request, body)
+        # In higher version of Starlette(>0.27.0), we could read the body on the middleware without hanging
+        # Reference: https://github.com/tiangolo/fastapi/discussions/8187#discussioncomment-7962881
+        if LooseVersion(self.starlette_version) < LooseVersion("0.27.0"):
+            self.set_body(request, body)
         return body
 
     @classmethod
