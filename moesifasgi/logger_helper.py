@@ -1,6 +1,9 @@
 import inspect
 import json
 import base64
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LoggerHelper:
@@ -44,8 +47,7 @@ class LoggerHelper:
                 return str(json_decode[field])
         except Exception as e:
             if debug:
-                print("Error while parsing authorization header to fetch user id.")
-                print(e)
+                logger.info(f"Error while parsing authorization header to fetch user id: {str(e)}")
         return None
 
     async def get_user_id(self, middleware_settings, request, response, request_headers, debug):
@@ -116,8 +118,7 @@ class LoggerHelper:
                             user_id = self.parse_authorization_header(token, field, debug)
         except Exception as e:
             if debug:
-                print("can not execute identify_user function, please check moesif settings.")
-                print(e)
+                logger.info(f"can not execute identify_user function, please check moesif settings: {str(e)}")
         return user_id
 
     async def get_company_id(self, middleware_settings, request, response, debug):
@@ -131,8 +132,7 @@ class LoggerHelper:
                     company_id = identify_company(request, response)
         except Exception as e:
             if debug:
-                print("can not execute identify_company function, please check moesif settings.")
-                print(e)
+                logger.info(f"can not execute identify_company function, please check moesif settings: {str(e)}")
         return company_id
 
     async def get_metadata(self, middleware_settings, request, response, debug):
@@ -146,8 +146,7 @@ class LoggerHelper:
                     metadata = get_metadata(request, response)
         except Exception as e:
             if debug:
-                print("can not execute get_metadata function, please check moesif settings.")
-                print(e)
+                logger.info(f"can not execute get_metadata function, please check moesif settings: {str(e)}")
         return metadata
 
     async def get_session_token(self, middleware_settings, request, response, debug):
@@ -161,8 +160,7 @@ class LoggerHelper:
                     session_token = get_session_token(request, response)
         except Exception as e:
             if debug:
-                print("Can not execute get_session_token function. Please check moesif settings.")
-                print(e)
+                logger.info(f"Can not execute get_session_token function. Please check moesif settings: {str(e)}")
         return session_token
 
     async def should_skip(self, middleware_settings, request, response, debug):
@@ -177,7 +175,7 @@ class LoggerHelper:
                 return False
         except Exception as e:
             if debug:
-                print("error trying to execute skip function.")
+                logger.info("error trying to execute skip function.")
             return False
 
     async def mask_event(self, event_model, middleware_settings, debug):
@@ -190,5 +188,5 @@ class LoggerHelper:
                     event_model = mask_event_model(event_model)
         except Exception as e:
             if debug:
-                print("Can not execute MASK_EVENT_MODEL function. Please check moesif settings.")
+                logger.info("Can not execute MASK_EVENT_MODEL function. Please check moesif settings.")
         return event_model

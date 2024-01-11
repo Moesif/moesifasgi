@@ -1,5 +1,9 @@
 import re
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ClientIp:
 
@@ -13,14 +17,15 @@ class ClientIp:
             ipv6 = r"^((?=.*::)(?!.*::.+::)(::)?([\dA-F]{1,4}:(:|\b)|){5}|([\dA-F]{1,4}:){6})((([\dA-F]{1,4}((?!\3)::|:\b|$))|(?!\2\3)){2}|(((2[0-4]|1\d|[1-9])?\d|25[0-5])\.?\b){4})$/i"
             return re.match(ipv4, value) or re.match(ipv6, value)
 
-    def getClientIpFromXForwardedFor(self, value):
+    def getClientIpFromXForwardedFor(self, value, debug):
         try:
 
             if not value or value is None:
                 return None
 
             if not isinstance(value, str):
-                print("Expected a string, got -" + str(type(value)))
+                if debug:
+                    logger.info(f"Expected a string, got - {str(type(value))}")
             else:
                 # x-forwarded-for may return multiple IP addresses in the format:
                 # "client IP, proxy 1 IP, proxy 2 IP"
@@ -45,7 +50,7 @@ class ClientIp:
         except StopIteration:
             return value.encode('utf-8')
 
-    def get_client_address(self, request_headers, default_host):
+    def get_client_address(self, request_headers, default_host, debug):
         try:
             # Standard headers used by Amazon EC2, Heroku, and others.
             if 'x-client-ip' in request_headers:
@@ -54,7 +59,7 @@ class ClientIp:
 
             # Load-balancers (AWS ELB) or proxies.
             if 'x-forwarded-for' in request_headers:
-                xForwardedFor = self.getClientIpFromXForwardedFor(request_headers['x-forwarded-for'])
+                xForwardedFor = self.getClientIpFromXForwardedFor(request_headers['x-forwarded-for'], debug)
                 if self.is_ip(xForwardedFor):
                     return xForwardedFor
 

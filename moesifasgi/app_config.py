@@ -1,6 +1,9 @@
 from datetime import datetime
 from moesifapi.exceptions.api_exception import *
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Application Configuration
 class AppConfig:
@@ -16,14 +19,12 @@ class AppConfig:
             return config_api_response
         except APIException as inst:
             if 401 <= inst.response_code <= 403:
-                print("Unauthorized access getting application configuration. Please check your Application Id.")
+                logger.error("Unauthorized access getting application configuration. Please check your Application Id.")
             if debug:
-                print("Error getting application configuration, with status code:")
-                print(inst.response_code)
+                logger.info(f"Error getting application configuration, with status code: {inst.response_code}")
         except Exception as ex:
             if debug:
-                print("Error getting application configuration:")
-                print(str(ex))
+                logger.info(f"Error getting application configuration: {str(ex)}")
 
     @classmethod
     def parse_configuration(cls, config, debug):
@@ -32,7 +33,7 @@ class AppConfig:
             return config.headers.get("X-Moesif-Config-ETag"), json.loads(config.raw_body).get('sample_rate', 100), datetime.utcnow()
         except:
             if debug:
-                print('Error while parsing the configuration object, setting the sample rate to default')
+                logger.info('Error while parsing the configuration object, setting the sample rate to default')
             return None, 100, datetime.utcnow()
 
     @classmethod
@@ -55,8 +56,7 @@ class AppConfig:
 
                 return config_body.get('sample_rate', 100)
             except Exception as e:
-                print("Error while parsing user or company sample rate")
-                print(e)
+                logger.warning(f"Error while parsing user or company sample rate:{str(e)}")
 
         # Use default
         return 100
