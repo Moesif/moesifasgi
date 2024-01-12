@@ -22,7 +22,7 @@ class EventMapper:
                           metadata=await self.logger_helper.get_metadata(moesif_settings, request, response, debug),
                           direction="Incoming")
 
-    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id):
+    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id, debug=False):
         # Request URI
         request_uri = request.url._url
         # Request Verb
@@ -41,7 +41,7 @@ class EventMapper:
                 # Add transaction id to the request header
                 request_headers["X-Moesif-Transaction-Id"] = self.transaction_id
         # Request Ip address
-        request_ip_address = self.client_ip.get_client_address(request_headers, request.client.host)
+        request_ip_address = self.client_ip.get_client_address(request_headers, request.client.host, debug)
         # Request Body
         req_body = None
         req_transfer_encoding = None

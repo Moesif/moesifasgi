@@ -22,6 +22,9 @@ import math
 import random
 import queue
 import atexit
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MoesifMiddleware(BaseHTTPMiddleware):
@@ -44,11 +47,11 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         if self.moesif_settings.get('CAPTURE_OUTGOING_REQUESTS', False):
             try:
                 if self.DEBUG:
-                    print('Start capturing outgoing requests')
+                    logger.info('Start capturing outgoing requests')
                 # Start capturing outgoing requests
                 StartCapture().start_capture_outgoing(self.moesif_settings)
             except:
-                print('Error while starting to capture the outgoing events')
+                logger.warning('Error while starting to capture the outgoing events')
         self.api_client = self.client.api
         self.app_config = AppConfig()
         self.send_async_events = SendEventAsync()
@@ -75,14 +78,13 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                     self.config, self.DEBUG)
         except Exception as ex:
             if self.DEBUG:
-                print('Error while parsing application configuration on initialization')
-                print(str(ex))
+                logger.info(f'Error while parsing application configuration on initialization:{str(ex)}')
 
     # Function to listen to the send event job response
     def moesif_event_listener(self, event):
         if event.exception:
             if self.DEBUG:
-                print('Error reading response from the scheduled job')
+                logger.info('Error reading response from the scheduled job')
         else:
             if event.retval:
                 response_etag, self.last_event_job_run_time = event.retval
@@ -96,8 +98,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                             self.config, self.DEBUG)
                     except Exception as ex:
                         if self.DEBUG:
-                            print('Error while updating the application configuration')
-                            print(str(ex))
+                            logger.info(f'Error while updating the application configuration: {str(ex)}')
 
     def schedule_background_job(self):
         try:
@@ -122,8 +123,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                 atexit.register(lambda: self.send_async_events.exit_handler(self.scheduler, self.DEBUG))
         except Exception as ex:
             if self.DEBUG:
-                print("Error when scheduling the job")
-                print(str(ex))
+                logger.info(f"Error when scheduling the job: {str(ex)}")
 
     def update_user(self, user_profile):
         User().update_user(user_profile, self.api_client, self.DEBUG)
@@ -159,7 +159,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         # request time
         request_time = self.get_time()
         if self.DEBUG:
-            print("event request time: ", request_time)
+            logger.info(f"event request time: {str(request_time)}")
 
         # Read Request Body
         request_body = None
@@ -172,7 +172,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         # response time
         response_time = self.get_time()
         if self.DEBUG:
-            print("event response time: ", response_time)
+            logger.info(f"event response time: {str(response_time)}")
 
         skip = await self.logger_helper.should_skip(self.moesif_settings, request, response, self.DEBUG)
         if not skip:
@@ -184,7 +184,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
             if self.sampling_percentage >= random_percentage:
                 # Prepare Event Request Model
-                event_req = self.event_mapper.to_request(request, request_time, request_body, self.api_version, self.disable_transaction_id)
+                event_req = self.event_mapper.to_request(request, request_time, request_body, self.api_version, self.disable_transaction_id, self.DEBUG)
 
                 # Read Response Body
                 resp_body = None
@@ -219,25 +219,22 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                             except Exception as ex:
                                 self.is_event_job_scheduled = False
                                 if self.DEBUG:
-                                    print('Error while starting the event scheduler job in background')
-                                    print(str(ex))
+                                    logger.info(f'Error while starting the event scheduler job in background: {str(ex)}')
                         # Add Event to the queue
                         if self.DEBUG:
-                            print('Add Event to the queue')
+                            logger.info('Add Event to the queue')
                         self.moesif_events_queue.put(event_data)
                     except Exception as ex:
                         if self.DEBUG:
-                            print("Error while adding event to the queue")
-                            print(str(ex))
+                            logger.info(f"Error while adding event to the queue: {str(ex)}")
                 else:
                     if self.DEBUG:
-                        print('Skipped Event as the moesif event model is None')
+                        logger.info('Skipped Event as the moesif event model is None')
             else:
                 if self.DEBUG:
-                    print("Skipped Event due to sampling percentage: " + str(self.sampling_percentage)
-                          + " and random percentage: " + str(random_percentage))
+                    logger.info(f"Skipped Event due to sampling percentage: {str(self.sampling_percentage)} and random percentage: {str(random_percentage)}")
         else:
             if self.DEBUG:
-                print('Skipped Event using should_skip configuration option')
+                logger.info('Skipped Event using should_skip configuration option')
 
         return response
