@@ -22,7 +22,7 @@ class EventMapper:
                           metadata=await self.logger_helper.get_metadata(moesif_settings, request, response, debug),
                           direction="Incoming")
 
-    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id, debug):
+    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id, debug=False):
         # Request URI
         request_uri = request.url._url
         # Request Verb

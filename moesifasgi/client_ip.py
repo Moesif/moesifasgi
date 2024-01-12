@@ -17,7 +17,7 @@ class ClientIp:
             ipv6 = r"^((?=.*::)(?!.*::.+::)(::)?([\dA-F]{1,4}:(:|\b)|){5}|([\dA-F]{1,4}:){6})((([\dA-F]{1,4}((?!\3)::|:\b|$))|(?!\2\3)){2}|(((2[0-4]|1\d|[1-9])?\d|25[0-5])\.?\b){4})$/i"
             return re.match(ipv4, value) or re.match(ipv6, value)
 
-    def getClientIpFromXForwardedFor(self, value, debug):
+    def getClientIpFromXForwardedFor(self, value, debug = False):
         try:
 
             if not value or value is None:
@@ -50,7 +50,7 @@ class ClientIp:
         except StopIteration:
             return value.encode('utf-8')
 
-    def get_client_address(self, request_headers, default_host, debug):
+    def get_client_address(self, request_headers, default_host, debug = False):
         try:
             # Standard headers used by Amazon EC2, Heroku, and others.
             if 'x-client-ip' in request_headers:

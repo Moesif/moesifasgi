@@ -15,3 +15,4 @@ six==1.16.0
 pycparser==2.21
 bcrypt
 python-multipart
+importlib-metadata
