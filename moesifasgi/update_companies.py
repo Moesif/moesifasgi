@@ -83,8 +83,7 @@ class Company:
                         if DEBUG:
                             logger.info("Error while updating companies, with status code: {str(inst.response_code)}")
                 else:
-                    if DEBUG:
-                        logger.info('To update companies, an company_id field is required')
+                    logger.error('To update companies, an company_id field is required')
 
             elif all(isinstance(company, CompanyModel) for company in company_profiles):
                 if all(company.company_id is not None for company in company_profiles):
@@ -98,8 +97,7 @@ class Company:
                         if DEBUG:
                             logger.info(f"Error while updating companies, with status code: {str(inst.response_code)}")
                 else:
-                    if DEBUG:
-                        logger.info('To update companies, an company_id field is required')
+                    logger.error('To update companies, an company_id field is required')
             else:
                 try:
                     company_profiles_json = [APIHelper.json_deserialize(d) for d in company_profiles]
@@ -116,7 +114,6 @@ class Company:
                             if DEBUG:
                                 logger.info(f"Error while updating companies, with status code: {str(inst.response_code)}")
                     else:
-                        if DEBUG:
-                            logger.info('To update companies, an company_id field is required')
+                        logger.error('To update companies, an company_id field is required')
                 except:
                     logger.warning('Error while deserializing the json, please make sure the json is valid')

@@ -28,8 +28,7 @@ class User:
                         if DEBUG:
                             logger.info(f"Error while updating user, with status code: {str(inst.response_code)}")
                 else:
-                    if DEBUG:
-                        logger.info('To update an user, an user_id field is required')
+                    logger.error('To update an user, an user_id field is required')
 
             elif isinstance(user_profile, UserModel):
                 if user_profile.user_id is not None:
@@ -43,8 +42,7 @@ class User:
                         if DEBUG:
                             logger.info(f"Error while updating user, with status code: {str(inst.response_code)}")
                 else:
-                    if DEBUG:
-                        logger.info('To update an user, an user_id field is required')
+                    logger.error('To update an user, an user_id field is required')
             else:
                 try:
                     user_profile_json = APIHelper.json_deserialize(user_profile)
@@ -59,8 +57,7 @@ class User:
                             if DEBUG:
                                 logger.info(f"Error while updating user, with status code: {str(inst.response_code)}")
                     else:
-                        if DEBUG:
-                            logger.info('To update an user, an user_id field is required')
+                        logger.error('To update an user, an user_id field is required')
                 except:
                     logger.warning('Error while deserializing the json, please make sure the json is valid')
 
@@ -83,8 +80,7 @@ class User:
                         if DEBUG:
                             logger.info(f"Error while updating users, with status code: {str(inst.response_code)}")
                 else:
-                    if DEBUG:
-                        logger.info('To update users, an user_id field is required')
+                    logger.error('To update users, an user_id field is required')
 
             elif all(isinstance(user, UserModel) for user in user_profiles):
                 if all(user.user_id is not None for user in user_profiles):
@@ -98,8 +94,7 @@ class User:
                         if DEBUG:
                             logger.info(f"Error while updating users, with status code: {str(inst.response_code)}")
                 else:
-                    if DEBUG:
-                        logger.info('To update users, an user_id field is required')
+                    logger.error('To update users, an user_id field is required')
             else:
                 try:
                     user_profiles_json = [APIHelper.json_deserialize(d) for d in user_profiles]
@@ -116,7 +111,6 @@ class User:
                             if DEBUG:
                                 logger.info(f"Error while updating users, with status code: {str(inst.response_code)}")
                     else:
-                        if DEBUG:
-                            logger.info('To update users, an user_id field is required')
+                        logger.error('To update users, an user_id field is required')
                 except:
                     logger.warning('Error while deserializing the json, please make sure the json is valid')
