@@ -1,8 +1,7 @@
 from moesifapi.models import *
-from .parse_body import ParseBody
+from moesifapi.parse_body import ParseBody
 from .logger_helper import LoggerHelper
 from .client_ip import ClientIp
-from datetime import datetime
 import uuid
 
 
@@ -13,14 +12,15 @@ class EventMapper:
         self.client_ip = ClientIp()
         self.transaction_id = None
 
-    async def to_event(self, request, response, event_req, event_rsp, moesif_settings, debug):
+    async def to_event(self, event_req, event_rsp, user_id, company_id, session_token, metadata, blocked_by):
         return EventModel(request=event_req,
                           response=event_rsp,
-                          user_id=await self.logger_helper.get_user_id(moesif_settings, request, response, dict(request.headers), debug),
-                          company_id=await self.logger_helper.get_company_id(moesif_settings, request, response, debug),
-                          session_token=await self.logger_helper.get_session_token(moesif_settings, request, response, debug),
-                          metadata=await self.logger_helper.get_metadata(moesif_settings, request, response, debug),
-                          direction="Incoming")
+                          user_id=user_id,
+                          company_id=company_id,
+                          session_token=session_token,
+                          metadata=metadata,
+                          direction="Incoming",
+                          blocked_by=blocked_by)
 
     def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id, debug=False):
         # Request URI
@@ -46,7 +46,7 @@ class EventMapper:
         req_body = None
         req_transfer_encoding = None
         if request_body:
-            req_body, req_transfer_encoding = self.parse_body.parse_bytes_body(request_body, request_headers)
+            req_body, req_transfer_encoding = self.parse_body.parse_bytes_body(request_body, None, request_headers)
 
         return EventRequestModel(time=request_time,
                                  uri=request_uri,
@@ -74,7 +74,7 @@ class EventMapper:
             except Exception as e:
                 rsp_body = str(response_body)
 
-            rsp_body, rsp_transfer_encoding = self.parse_body.parse_bytes_body(rsp_body, response_headers)
+            rsp_body, rsp_transfer_encoding = self.parse_body.parse_bytes_body(rsp_body, None, response_headers)
 
         return EventResponseModel(time=response_time,
                                   status=response_status,
