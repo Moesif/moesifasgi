@@ -100,7 +100,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             debug=self.DEBUG,
             max_queue_size=self.settings.get("EVENT_QUEUE_SIZE", 1000000),
             batch_size=self.settings.get("BATCH_SIZE", 100),
-            timeout=self.settings.get("EVENT_BATCH_TIMEOUT", 2),
+            timeout=self.settings.get("EVENT_BATCH_TIMEOUT", 1),
         )
 
     def update_user(self, user_profile):
@@ -140,7 +140,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             response_content = body[0]
         except Exception as ex:
             if self.DEBUG:
-                logger.debug(f"Error while preparing the response content: {str(ex)}")
+                logger.info(f"Error while preparing the response content: {str(ex)}")
         return response_content
 
     async def dispatch(self, request, call_next):
@@ -224,7 +224,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         event_data.weight = 1 if self.sampling_percentage == 0 else math.floor(100 / self.sampling_percentage)
 
         if random_percentage >= self.sampling_percentage:
-            logger.debug(f"Skipped Event due to sampling percentage: {str(self.sampling_percentage)}"
+            logger.info(f"Skipped Event due to sampling percentage: {str(self.sampling_percentage)}"
                          f" and random percentage: {str(random_percentage)}")
             return response
 
@@ -233,12 +233,12 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             if self.worker_pool.add_event(event_data):
                 logger.debug("Add Event to the queue")
                 if self.DEBUG:
-                    logger.debug(f"Event added to the queue: {APIHelper.json_serialize(event_data)}")
+                    logger.info(f"Event added to the queue: {APIHelper.json_serialize(event_data)}")
             else:
                 self.dropped_events += 1
                 logger.info(f"Dropped Event due to queue capacity drop_count: {str(self.dropped_events)}")
                 if self.DEBUG:
-                    logger.debug(f"Event dropped: {APIHelper.json_serialize(event_data)}")
+                    logger.info(f"Event dropped: {APIHelper.json_serialize(event_data)}")
         # add_event does not throw exceptions so this is unexepected
         except Exception as ex:
             logger.exception(f"Error while adding event to the queue: {str(ex)}")
