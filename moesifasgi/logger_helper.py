@@ -2,6 +2,7 @@ import inspect
 import json
 import base64
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +11,13 @@ class LoggerHelper:
 
     def __init__(self):
         pass
+    @classmethod
+    def sanitize_header_value(cls, value):
+        # Remove any non-printable characters
+        value = re.sub(r'[^\x20-\x7E]', '', value)
+        # Replace any spaces with underscores
+        value = value.replace(' ', '_')
+        return value
 
     @classmethod
     def transform_token(cls, token):
