@@ -84,7 +84,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     def initialize_config(self):
         Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
-        Configuration.version = 'moesifasgi-python/1.0.0'
+        Configuration.version = 'moesifasgi-python/1.0.1'
         self.LOG_BODY = self.settings.get("LOG_BODY", True)
 
         self.app_config = AppConfig()
