@@ -12,6 +12,7 @@ from starlette.middleware.base import _StreamingResponse
 from moesifpythonrequest.start_capture.start_capture import StartCapture
 from moesifapi.config_manager import ConfigUpdateManager
 from moesifapi.workers import BatchedWorkerPool, ConfigJobScheduler
+from moesifapi.parse_body import ParseBody
 from starlette.types import Message
 from importlib.metadata import version
 from distutils.version import LooseVersion
@@ -67,6 +68,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.dropped_events = 0
         self.logger_helper = LoggerHelper()
         self.event_mapper = EventMapper()
+        self.parse_body = ParseBody()
 
     def initialize_client(self):
         self.api_version = self.settings.get("API_VERSION")
@@ -84,7 +86,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     def initialize_config(self):
         Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
-        Configuration.version = 'moesifasgi-python/1.0.2'
+        Configuration.version = 'moesifasgi-python/1.0.3'
         self.LOG_BODY = self.settings.get("LOG_BODY", True)
 
         self.app_config = AppConfig()
@@ -149,9 +151,14 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         if self.DEBUG:
             logger.info(f"event request time: {str(request_time)}")
 
+        # Request headers
+        request_headers = dict(request.headers)
+        # Check if multipart/form-data payload
+        is_multi_part_request_upload = self.parse_body.is_multi_part_upload(request_headers)
+
         # Read Request Body
         request_body = None
-        if self.LOG_BODY:
+        if self.LOG_BODY and not is_multi_part_request_upload:
             request_body = await self.get_body(request)
 
         # Prepare Event Request Model
@@ -190,9 +197,14 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                 logger.info("Skipped Event using should_skip configuration option")
             return response
 
+        # Response headers
+        response_headers = dict(response.headers)
+        # Check if multipart/form-data payload
+        is_multi_part_response_upload = self.parse_body.is_multi_part_upload(response_headers)
+
         # Read Response Body
         resp_body = None
-        if self.LOG_BODY:
+        if self.LOG_BODY and not is_multi_part_response_upload:
             # Consuming FastAPI response and grabbing body here
             resp_body = [section async for section in response.__dict__['body_iterator']]
             # Preparing FastAPI response
