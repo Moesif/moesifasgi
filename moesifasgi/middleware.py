@@ -86,7 +86,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     def initialize_config(self):
         Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
-        Configuration.version = 'moesifasgi-python/1.0.3'
+        Configuration.version = 'moesifasgi-python/1.0.4'
         self.LOG_BODY = self.settings.get("LOG_BODY", True)
 
         self.app_config = AppConfig()
@@ -127,7 +127,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         body = await request.body()
         # In higher version of Starlette(>0.27.0), we could read the body on the middleware without hanging
         # Reference: https://github.com/tiangolo/fastapi/discussions/8187#discussioncomment-7962881
-        if LooseVersion(self.starlette_version) < LooseVersion("0.27.0"):
+        if LooseVersion(self.starlette_version) < LooseVersion("0.29.0"):
             self.set_body(request, body)
         return body
 
