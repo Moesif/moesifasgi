@@ -19,6 +19,8 @@ from distutils.version import LooseVersion
 import math
 import random
 import logging
+import json
+import starlette.datastructures
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     def initialize_config(self):
         Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
-        Configuration.version = 'moesifasgi-python/1.0.5'
+        Configuration.version = 'moesifasgi-python/1.0.6'
         self.LOG_BODY = self.settings.get("LOG_BODY", True)
 
         self.app_config = AppConfig()
@@ -123,6 +125,43 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
         request._receive = receive
 
+    def set_form_data_body(self, request: Request, form_data: starlette.datastructures.FormData):
+        # Extract boundary from the Content-Type header
+        content_type = request.headers.get("content-type", "")
+        boundary = content_type.split("boundary=")[
+            -1] if "boundary=" in content_type else "------------------------boundary_string"
+        async def receive() -> Message:
+            # Create the multipart body
+            multipart_body = []
+
+            # Iterate through the FormData and construct the multipart body
+            for key, value in form_data.items():
+                multipart_body.append(f'--{boundary}')
+                multipart_body.append(f'Content-Disposition: form-data; name="{key}"')
+
+                if isinstance(value, str):
+                    multipart_body.append('')
+                    multipart_body.append(value)
+                elif hasattr(value, 'filename'):
+                    multipart_body.append(f'Content-Disposition: form-data; name="{key}"; filename="{value.filename}"')
+                    multipart_body.append('Content-Type: application/octet-stream')  # Set appropriate content type
+                    multipart_body.append('')
+                    # Read the file content as bytes
+                    file_content = await value.read()
+                    multipart_body.append(file_content)  # Append bytes directly
+
+            # Add the closing boundary
+            multipart_body.append(f'--{boundary}--')
+
+            # Join the parts and encode them as bytes
+            # Convert all string parts to bytes before joining
+            body_bytes = b'\r\n'.join(
+                part.encode('utf-8') if isinstance(part, str) else part for part in multipart_body)
+
+            return {"type": "http.request", "body": body_bytes}
+
+        request._receive = receive
+
     async def get_body(self, request: Request) -> bytes:
         body = await request.body()
         # In higher version of Starlette(>0.27.0), we could read the body on the middleware without hanging
@@ -130,6 +169,27 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         if LooseVersion(self.starlette_version) < LooseVersion("0.29.0"):
             self.set_body(request, body)
         return body
+
+    async def get_form_data(self, request: Request):
+        try:
+            json_data = {}
+            body = await request.form()
+
+            # Iterate through the form data
+            for key, value in body.items():
+                if isinstance(value, str):
+                    # If the value is a string, just add it to the JSON
+                    json_data[key] = value
+                elif hasattr(value, 'filename'):
+                    # If the value is an UploadFile, store the filename
+                    json_data[key] = value.filename
+
+            if LooseVersion(self.starlette_version) < LooseVersion("0.29.0"):
+                self.set_form_data_body(request, body)
+
+            return json.dumps(json_data).encode('utf-8')
+        except:
+            return None
 
     @classmethod
     def get_time(cls):
@@ -158,8 +218,11 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
         # Read Request Body
         request_body = None
-        if self.LOG_BODY and not is_multi_part_request_upload:
-            request_body = await self.get_body(request)
+        if self.LOG_BODY:
+            if is_multi_part_request_upload:
+                request_body = await self.get_form_data(request)
+            else:
+                request_body = await self.get_body(request)
 
         # Prepare Event Request Model
         event_req = self.event_mapper.to_request(request, request_time, request_body, self.api_version,
