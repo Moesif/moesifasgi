@@ -97,7 +97,7 @@ to associate this event with custom metadata. For example, you may want to save 
 (optional) __int__, default 25, Maximum batch size when sending events to Moesif.
 
 #### __`EVENT_BATCH_TIMEOUT`__
-optional __int__, default 1, the maximum amount of time, in seconds, that the batcher will wait for the next event before creating a new batch. This ensures that events are sent in a timely manner, even if the batch is not yet full. This parameter should be set based on the desired frequency of event uploads and acceptable delay.
+(optional) __int__, default 1, Maximum time in seconds to wait before sending a batch of events to Moesif when reading from the queue
 
 #### __`EVENT_QUEUE_SIZE`__
 (optional) __int__, default 1000000, the maximum number of event objects queued in memory pending upload to Moesif.  If the queue is full additional calls to `MoesifMiddleware` will return immediately without logging the event, so this number should be set based on the expected event size and memory capacity.
