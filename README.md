@@ -45,9 +45,9 @@ app.add_middleware(MoesifMiddleware, settings=moesif_settings)
 ```
 
 Your Moesif Application Id can be found in the [_Moesif Portal_](https://www.moesif.com/).
-After signing up for a Moesif account, your Moesif Application Id will be displayed during the onboarding steps. 
+After signing up for a Moesif account, your Moesif Application Id will be displayed during the onboarding steps.
 
-You can always find your Moesif Application Id at any time by logging 
+You can always find your Moesif Application Id at any time by logging
 into the [_Moesif Portal_](https://www.moesif.com/), click on the top right menu,
 and then clicking _API Keys_.
 
@@ -96,8 +96,11 @@ to associate this event with custom metadata. For example, you may want to save 
 #### __`BATCH_SIZE`__
 (optional) __int__, default 25, Maximum batch size when sending events to Moesif.
 
+#### __`EVENT_BATCH_TIMEOUT`__
+(optional) __int__, default 1, Maximum time in seconds to wait before sending a batch of events to Moesif when reading from the queue
+
 #### __`EVENT_QUEUE_SIZE`__
-(optional) __int__, default 1000000, the maximum number of event objects queued in memory pending upload to Moesif.  If the queue is full additional calls to `MoesifMiddleware` will return immediately without logging the event, so this number should be set based on the expected event size and memory capacity
+(optional) __int__, default 1000000, the maximum number of event objects queued in memory pending upload to Moesif.  If the queue is full additional calls to `MoesifMiddleware` will return immediately without logging the event, so this number should be set based on the expected event size and memory capacity.
 
 #### __`AUTHORIZATION_HEADER_NAME`__
 (optional) _string_, A request header field name used to identify the User in Moesif. Default value is `authorization`. Also, supports a comma separated string. We will check headers in order like `"X-Api-Key,Authorization"`.
@@ -108,7 +111,7 @@ to associate this event with custom metadata. For example, you may want to save 
 #### __`BASE_URI`__
 (optional) _string_, A local proxy hostname when sending traffic via secure proxy. Please set this field when using secure proxy. For more details, refer [secure proxy documentation.](https://www.moesif.com/docs/platform/secure-proxy/#2-configure-moesif-sdk)
 
-### Options specific to outgoing API calls 
+### Options specific to outgoing API calls
 
 The options below are applicable to outgoing API calls (calls you initiate using the Python [Requests](http://docs.python-requests.org/en/master/) lib to third parties like Stripe or to your own services).
 
@@ -117,11 +120,11 @@ For options that use the request and response as input arguments, these use the 
 If you are not using ASGI, you can import the [moesifpythonrequest](https://github.com/Moesif/moesifpythonrequest) directly.
 
 #### __`CAPTURE_OUTGOING_REQUESTS`__
-_boolean_, Default False. Set to True to capture all outgoing API calls. False will disable this functionality. 
+_boolean_, Default False. Set to True to capture all outgoing API calls. False will disable this functionality.
 
 ##### __`GET_METADATA_OUTGOING`__
-(optional) _(req, res) => dictionary_, a function that enables you to return custom metadata associated with the logged API calls. 
-Takes in the [Requests](http://docs.python-requests.org/en/master/api/) request and response object as arguments. You should implement a function that 
+(optional) _(req, res) => dictionary_, a function that enables you to return custom metadata associated with the logged API calls.
+Takes in the [Requests](http://docs.python-requests.org/en/master/api/) request and response object as arguments. You should implement a function that
 returns a dictionary containing your custom metadata. (must be able to be encoded into JSON). For example, you may want to save a VM instance_id, a trace_id, or a resource_id with the request.
 
 ##### __`SKIP_OUTGOING`__
