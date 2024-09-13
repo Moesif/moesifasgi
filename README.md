@@ -1,4 +1,4 @@
-# Moesif Middleware for Python ASGI based Frameworks
+# Moesif Middleware for Python ASGI-based Frameworks
 
 [![Built For][ico-built-for]][link-built-for]
 [![Latest Version][ico-version]][link-package]
@@ -6,34 +6,56 @@
 [![Software License][ico-license]][link-license]
 [![Source Code][ico-source]][link-source]
 
-ASGI middleware that automatically logs _incoming_ or _outgoing_ API calls and sends to [Moesif](https://www.moesif.com) for API analytics and monitoring.
-Supports Python Frameworks built on ASGI such as FastAPI and more.
+With Moesif middleware for Python ASGI-based frameworks, you can automatically log API calls 
+and send them to [Moesif](https://www.moesif.com) for API analytics and monitoring.
 
-[Source Code on GitHub](https://github.com/moesif/moesifasgi)
+> If you're new to Moesif, see [our Getting Started](https://www.moesif.com/docs/) resources to quickly get up and running.
 
-[ASGI (Asynchronous Server Gateway Interface)](https://asgi.readthedocs.io/en/latest/)
-is a spiritual successor to WSGI, intended to provide a standard interface between async-capable Python web servers, frameworks, and applications. Many Python Frameworks
-are build on top of ASGI, such as [FastAPI](https://fastapi.tiangolo.com/), etc.
-Moesif ASGI Middleware help APIs that are build on top of these Frameworks to
-easily integrate with [Moesif](https://www.moesif.com).
+## Overview
 
-## How to install
+This middleware allows you to integrate Moesif's API analytics and 
+API monetization features with minimal configuration into APIs that are built on Python ASGI-based (Asynchronous Server Gateway Interface) frameworks.
+
+[ASGI](https://asgi.readthedocs.io/en/latest/)
+is a spiritual successor to WSGI (Web Server Gateway Interface). ASGI provides a standard interface between async-capable Python web servers, frameworks, and applications. Many Python Frameworks
+are built on top of ASGI, such as [FastAPI](https://fastapi.tiangolo.com/).
+
+## Prerequisites
+Before using this middleware, make sure you have the following:
+
+- [An active Moesif account](https://moesif.com/wrap)
+- [A Moesif Application ID](#get-your-moesif-application-id)
+
+### Get Your Moesif Application ID
+After you log into [Moesif Portal](https://www.moesif.com/wrap), you can get your Moesif Application ID during the onboarding steps. You can always access the Application ID any time by following these steps from Moesif Portal after logging in:
+
+1. Select the account icon to bring up the settings menu.
+2. Select **Installation** or **API Keys**.
+3. Copy your Moesif Application ID from the **Collector Application ID** field.
+
+<img class="lazyload blur-up" src="images/app_id.png" width="700" alt="Accessing the settings menu in Moesif Portal">
+
+## Install the Middleware
+Install with `pip` using the following command:
 
 ```shell
 pip install moesifasgi
 ```
 
-## How to use
+## Configure the Middleware
+See the available [configuration options](#configuration-options) to learn how to configure the middleware for your use case. 
+
+## How to Use
 
 ### FastAPI
 
-Add Moesif middleware to fastAPI app.
+Simply add `MoesifMiddleware` to a FastAPI application using the `add_middleware` method:
 
 ```python
 from moesifasgi import MoesifMiddleware
 
 moesif_settings = {
-    'APPLICATION_ID': 'Your Moesif Application id',
+    'APPLICATION_ID': 'YOUR_APPLICATION_ID',
     'LOG_BODY': True,
     # ... For other options see below.
 }
@@ -41,110 +63,675 @@ moesif_settings = {
 app = FastAPI()
 
 app.add_middleware(MoesifMiddleware, settings=moesif_settings)
-
 ```
 
-Your Moesif Application Id can be found in the [_Moesif Portal_](https://www.moesif.com/).
-After signing up for a Moesif account, your Moesif Application Id will be displayed during the onboarding steps.
+Replace *`YOUR_MOESIF_APPLICATION_ID`* with your [Moesif Application ID](#get-your-moesif-application-id).
 
-You can always find your Moesif Application Id at any time by logging
-into the [_Moesif Portal_](https://www.moesif.com/), click on the top right menu,
-and then clicking _API Keys_.
+### Flask
+See the example in the `/examples/flask` folder of this repository.
 
-For an example with Flask, see example in the `/examples/flask` folder of this repo.
-
-### Other ASGI frameworks
+### Other ASGI Frameworks
 
 If you are using a framework that is built on top of ASGI, it should work just by adding the Moesif middleware.
-Please read the documentation for your specific framework on how to add middleware.
+Please read the documentation for your specific framework on how to add middlewares.
 
-## Configuration options
+### Optional: Capturing Outgoing API Calls
+In addition to your own APIs, you can also start capturing calls out to third party services through by setting the `CAPTURE_OUTGOING_REQUESTS` option:
 
-#### __`APPLICATION_ID`__
-(__required__), _string_, is obtained via your Moesif Account, this is required.
+```python
+from moesifasgi import MoesifMiddleware
 
-For options that use the request and response as input arguments, these use the [Requests](https://www.starlette.io/requests/) and [Responses](https://www.starlette.io/responses/) objects respectively.
+moesif_settings = {
+    'APPLICATION_ID': 'YOUR_APPLICATION_ID',
+    'LOG_BODY': True,
+    'CAPTURE_OUTGOING_REQUESTS': False,
+}
 
-#### __`SKIP`__
-(optional) _(request, response) => boolean_, a function that takes a request and a response,
-and returns true if you want to skip this particular event.
+app = FastAPI()
 
-#### __`IDENTIFY_USER`__
-(optional, but highly recommended) _(request, response) => string_, a function that takes a request and a response, and returns a string that is the user id used by your system. While Moesif tries to identify users automatically,
-but different frameworks and your implementation might be very different, it would be helpful and much more accurate to provide this function.
+app.add_middleware(MoesifMiddleware, settings=moesif_settings)
+```
 
-#### __`IDENTIFY_COMPANY`__
-(optional) _(request, response) => string_, a function that takes a request and a response, and returns a string that is the company id for this event.
+For configuration options specific to capturing outgoing API calls, see [Options For Outgoing API Calls](#options-for-outgoing-api-calls).
 
-#### __`GET_METADATA`__
-(optional) _(request, response) => dictionary_, a function that takes a request and a response, and
-returns a dictionary (must be able to be encoded into JSON). This allows your
-to associate this event with custom metadata. For example, you may want to save a VM instance_id, a trace_id, or a tenant_id with the request.
+## Troubleshoot
+For a general troubleshooting guide that can help you solve common problems, see [Server Troubleshooting Guide](https://www.moesif.com/docs/troubleshooting/server-troubleshooting-guide/).
 
-#### __`GET_SESSION_TOKEN`__
-(optional) _(request, response) => string_, a function that takes a request and a response, and returns a string that is the session token for this event. Again, Moesif tries to get the session token automatically, but if you setup is very different from standard, this function will be very help for tying events together, and help you replay the events.
+Other troubleshooting supports:
 
-#### __`MASK_EVENT_MODEL`__
-(optional) _(EventModel) => EventModel_, a function that takes an EventModel and returns an EventModel with desired data removed. The return value must be a valid EventModel required by Moesif data ingestion API. For details regarding EventModel please see the [Moesif Python API Documentation](https://www.moesif.com/docs/api?python).
+- [FAQ](https://www.moesif.com/docs/faq/)
+- [Moesif support email](mailto:support@moesif.com)
 
-#### __`DEBUG`__
-(optional) _boolean_, a flag to see debugging messages.
+## Repository Structure
 
-#### __`LOG_BODY`__
-(optional) _boolean_, default True, Set to False to remove logging request and response body.
+```
+.
+├── BUILDING.md
+├── examples/
+├── images/
+├── LICENSE
+├── MANIFEST.in
+├── moesifasgi/
+├── README.md
+├── requirements.txt
+├── setup.cfg
+└── setup.py
+```
 
-#### __`BATCH_SIZE`__
-(optional) __int__, default 25, Maximum batch size when sending events to Moesif.
+## Configuration Options
+The following sections describe the available configuration options for this middleware. You can set these options in a Python dictionary and then pass that as a parameter to `add_middleware` when you add this middleware. See [the sample FastAPI code](https://github.com/Moesif/moesifasgi/blob/1c43c02d2e90b392980371bd4382a609fbdd7f06/examples/fastapi/main.py#L218-L233) for an example.
 
-#### __`EVENT_BATCH_TIMEOUT`__
-(optional) __int__, default 1, Maximum time in seconds to wait before sending a batch of events to Moesif when reading from the queue
+Some configuration options use request and response as input arguments. These correspond to the [`Requests`](https://www.starlette.io/requests/) and [`Responses`](https://www.starlette.io/responses/) objects respectively.
 
-#### __`EVENT_QUEUE_SIZE`__
-(optional) __int__, default 1000000, the maximum number of event objects queued in memory pending upload to Moesif.  If the queue is full additional calls to `MoesifMiddleware` will return immediately without logging the event, so this number should be set based on the expected event size and memory capacity.
+#### `APPLICATION_ID` (Required)
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
-#### __`AUTHORIZATION_HEADER_NAME`__
-(optional) _string_, A request header field name used to identify the User in Moesif. Default value is `authorization`. Also, supports a comma separated string. We will check headers in order like `"X-Api-Key,Authorization"`.
+A string that [identifies your application in Moesif](#get-your-moesif-application-id).
 
-#### __`AUTHORIZATION_USER_ID_FIELD`__
-(optional) _string_, A field name used to parse the User from authorization header in Moesif. Default value is `sub`.
+#### `SKIP`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(request, response)</code>
+   </td>
+   <td>
+    Boolean
+   </td>
+  </tr>
+</table>
 
-#### __`BASE_URI`__
-(optional) _string_, A local proxy hostname when sending traffic via secure proxy. Please set this field when using secure proxy. For more details, refer [secure proxy documentation.](https://www.moesif.com/docs/platform/secure-proxy/#2-configure-moesif-sdk)
+Optional.
 
-### Options specific to outgoing API calls
+A function that takes a request and a response,
+and returns `True` if you want to skip this particular event.
 
-The options below are applicable to outgoing API calls (calls you initiate using the Python [Requests](http://docs.python-requests.org/en/master/) lib to third parties like Stripe or to your own services).
+#### `IDENTIFY_USER`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(request, response)</code>
+   </td>
+   <td>
+    <code>String</code>
+   </td>
+  </tr>
+</table>
 
-For options that use the request and response as input arguments, these use the [Requests](http://docs.python-requests.org/en/master/api/) lib's request or response objects.
+Optional, but highly recommended.
 
-If you are not using ASGI, you can import the [moesifpythonrequest](https://github.com/Moesif/moesifpythonrequest) directly.
+A function that takes a request and a response, and returns a string that represents the user ID used by your system. 
 
-#### __`CAPTURE_OUTGOING_REQUESTS`__
-_boolean_, Default False. Set to True to capture all outgoing API calls. False will disable this functionality.
+Moesif identifies users automatically. However, due to the differences arising from different frameworks and implementations, provide this function to ensure user identification properly.
 
-##### __`GET_METADATA_OUTGOING`__
-(optional) _(req, res) => dictionary_, a function that enables you to return custom metadata associated with the logged API calls.
-Takes in the [Requests](http://docs.python-requests.org/en/master/api/) request and response object as arguments. You should implement a function that
-returns a dictionary containing your custom metadata. (must be able to be encoded into JSON). For example, you may want to save a VM instance_id, a trace_id, or a resource_id with the request.
+#### `IDENTIFY_COMPANY`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(request, response)</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
 
-##### __`SKIP_OUTGOING`__
-(optional) _(req, res) => boolean_, a function that takes a [Requests](http://docs.python-requests.org/en/master/api/) request and response,
-and returns true if you want to skip this particular event.
+Optional. 
 
-##### __`IDENTIFY_USER_OUTGOING`__
-(optional, but highly recommended) _(req, res) => string_, a function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response, and returns a string that is the user id used by your system. While Moesif tries to identify users automatically,
-but different frameworks and your implementation might be very different, it would be helpful and much more accurate to provide this function.
+A function that takes a request and response, and returns a string that represents the company ID for this event.
 
-##### __`IDENTIFY_COMPANY_OUTGOING`__
-(optional) _(req, res) => string_, a function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response, and returns a string that is the company id for this event.
+#### `GET_METADATA`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(request, response)</code>
+   </td>
+   <td>
+    Dictionary
+   </td>
+  </tr>
+</table>
 
-##### __`GET_SESSION_TOKEN_OUTGOING`__
-(optional) _(req, res) => string_, a function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response, and returns a string that is the session token for this event. Again, Moesif tries to get the session token automatically, but if you setup is very different from standard, this function will be very help for tying events together, and help you replay the events.
+Optional.
 
-##### __`LOG_BODY_OUTGOING`__
-(optional) _boolean_, default True, Set to False to remove logging request and response body.
+This function allows you
+to add custom metadata that Moesif can associate with the event. The metadata must be a simple Python dictionary that can be converted to JSON. 
 
-### Example:
+For example, you may want to save a virtual machine instance ID, a trace ID, or a resource ID with the request.
+
+#### `GET_SESSION_TOKEN`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(request, response)</code>
+   </td>
+   <td>
+    Dictionary
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A function that takes a request and response, and returns a string that represents the session token for this event. 
+
+Similar to users and companies, Moesif tries to retrieve session tokens automatically. But if it doesn't work for your service, provide this function to help identify sessions.
+
+#### `MASK_EVENT_MODEL`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(EventModel)</code>
+   </td>
+   <td>
+    <code>EventModel</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A function that takes the final Moesif event model and returns an event model with desired data removed. 
+
+The return value must be a valid eventt model required by Moesif data ingestion API. For more information about the `EventModel` object, see the [Moesif Python API documentation](https://www.moesif.com/docs/api?python).
+
+#### `DEBUG`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Boolean
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+Set to `True` to print debug logs if you're having integration issues.
+
+#### `LOG_BODY`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Boolean
+   </td>
+   <td>
+    <code>True</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+Whether to log request and response body to Moesif.
+
+#### `BATCH_SIZE`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>int</code>
+   </td>
+   <td>
+    <code>25</code>
+   </td>
+  </tr>
+</table>
+
+An optional field name that specifies the maximum batch size when sending to Moesif.
+
+#### `EVENT_BATCH_TIMEOUT`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>int</code>
+   </td>
+   <td>
+    <code>1</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+Maximum time in seconds to wait before sending a batch of events to Moesif when reading from the queue.
+
+#### `EVENT_QUEUE_SIZE`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    <code>int</code>
+   </td>
+   <td>
+    <code>1000_000</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+The maximum number of event objects queued in memory pending upload to Moesif. For a full queue, additional calls to `MoesifMiddleware` returns immediately without logging the event. Therefore, set this option based on the event size and memory capacity you expect.
+
+#### `AUTHORIZATION_HEADER_NAME`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default 
+   </th>
+  </tr>
+  <tr>
+   <td>
+    String
+   </td>
+   <td>
+    <code>authorization</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A request header field name used to identify the User in Moesif. It also supports a comma separated string. Moesif checks headers in order like `"X-Api-Key,Authorization"`.
+
+#### `AUTHORIZATION_USER_ID_FIELD`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default 
+   </th>
+  </tr>
+  <tr>
+   <td>
+    String
+   </td>
+   <td>
+    <code>sub</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A field name used to parse the user from authorization header in Moesif.
+
+#### `BASE_URI`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default 
+   </th>
+  </tr>
+  <tr>
+   <td>
+    String
+   </td>
+   <td>
+    <code>sub</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A local proxy hostname when sending traffic through secure proxy. Remember to set this field when using secure proxy. For more information, see [Secure Proxy documentation.](https://www.moesif.com/docs/platform/secure-proxy/#2-configure-moesif-sdk).
+
+### Options For Outgoing API Calls
+
+The following options apply to outgoing API calls. These are calls you initiate using the Python [Requests](http://docs.python-requests.org/en/master/) library to third parties like Stripe or to your own services.
+
+Several options use request and response as input arguments. These correspond to the [Requests](http://docs.python-requests.org/en/master/api/) library's request or response objects.
+
+If you are not using ASGI, you can import [`moesifpythonrequest`](https://github.com/Moesif/moesifpythonrequest) directly.
+
+#### `CAPTURE_OUTGOING_REQUESTS` (Required)
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default 
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Boolean
+   </td>
+   <td>
+    <code>False</code>
+   </td>
+  </tr>
+</table>
+
+Set to `True` to capture all outgoing API calls.
+
+##### `GET_METADATA_OUTGOING`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(req, res)</code>
+   </td>
+   <td>
+    Dictionary
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A function that enables you to return custom metadata associated with the logged API calls.
+
+Takes in the [Requests](http://docs.python-requests.org/en/master/api/) request and response objects as arguments. 
+
+We recommend that you implement a function that
+returns a dictionary containing your custom metadata. The dictionary must be a valid one that can be encoded into JSON. For example, you may want to save a virtual machine instance ID, a trace ID, or a resource ID with the request.
+
+##### `SKIP_OUTGOING`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(req, res)</code>
+   </td>
+   <td>
+    Boolean
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A function that takes a [Requests](http://docs.python-requests.org/en/master/api/) request and response objects,
+and returns `True` if you want to skip this particular event.
+
+##### `IDENTIFY_USER_OUTGOING`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(req, res)</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
+
+Optional, but highly recommended).
+
+A function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response objects, and returns a string that represents the user ID used by your system. 
+
+While Moesif tries to identify users automatically, different frameworks and your implementation might vary. So we highly recommend that you accurately provide a 
+user ID using this function.
+
+##### `IDENTIFY_COMPANY_OUTGOING`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(req, res)</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response objects, and returns a string that represents the company ID for this event.
+
+##### `GET_SESSION_TOKEN_OUTGOING`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Parameters
+   </th>
+   <th scope="col">
+    Return type
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Function
+   </td>
+   <td>
+    <code>(req, res)</code>
+   </td>
+   <td>
+    String
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+A function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response objects, and returns a string that corresponds to the session token for this event. 
+
+Similar to [user IDs](#identify_user_outgoing), Moesif tries to get the session token automatically. However, if you setup differs from the standard, this function can help tying up events together and help you replay the events.
+
+##### `LOG_BODY_OUTGOING`
+<table>
+  <tr>
+   <th scope="col">
+    Data type
+   </th>
+   <th scope="col">
+    Default
+   </th>
+  </tr>
+  <tr>
+   <td>
+    Boolean
+   </td>
+   <td>
+    <code>True</code>
+   </td>
+  </tr>
+</table>
+
+Optional.
+
+Set to `False` to remove logging request and response body.
+
+## Examples
+See the example FastAPI app in the `examples/` folder of this repository that uses this middleware.
+
+Here's another sample FastAPI app:
 
 ```python
 # Your custom code that returns a user id string
@@ -213,7 +800,7 @@ def get_metadata(request, response):
 skip_route = "health/probe"
 
 async def custom_should_skip(request):
-    # Your custom code that returns true to skip logging
+    # Your custom code that returns `True` to skip logging
     return skip_route in request.url._url
 
 # should skip check using async mode
@@ -241,7 +828,7 @@ def mask_event(eventmodel):
 
 
 moesif_settings = {
-    'APPLICATION_ID': 'Your Moesif Application Id',
+    'APPLICATION_ID': 'YOUR_MOESIF_APPLICATION_ID',
     'DEBUG': False,
     'LOG_BODY': True,
     'IDENTIFY_USER': identify_user,
@@ -256,22 +843,25 @@ moesif_settings = {
 app = FastAPI()
 
 app.add_middleware(MoesifMiddleware, settings=moesif_settings)
-
 ```
 
-**`OAuth2`** can also been used [more info](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/)
+You can use **`OAuth2`** in your FastAPI app with this middleware. For more information, see [OAuth2 with Password (and hashing), Bearer with JWT tokens](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/).
+
 ## Tested versions
 
-Moesif has validated `Moesif.Middleware` against the following framework.
+Moesif has validated this middleware against the following frameworks and framework versions:
 
 |         | Framework Version |
 |---------|-------------------|
 | fastapi | > 0.51.0 - 0.78.0 |
 | fastapi |  0.108.0          |
 
-## Other integrations
+## Explore Other Integrations
 
-To view more documentation on integration options, please visit __[the Integration Options Documentation](https://www.moesif.com/docs/getting-started/integration-options/).__
+Explore other integration options from Moesif:
+
+- [Server integration options documentation](https://www.moesif.com/docs/server-integration//)
+- [Client integration options documentation](https://www.moesif.com/docs/client-integration/)
 
 [ico-built-for]: https://img.shields.io/badge/built%20for-python%20asgi-blue.svg
 [ico-version]: https://img.shields.io/pypi/v/moesifasgi.svg
