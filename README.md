@@ -67,9 +67,6 @@ app.add_middleware(MoesifMiddleware, settings=moesif_settings)
 
 Replace *`YOUR_MOESIF_APPLICATION_ID`* with your [Moesif Application ID](#get-your-moesif-application-id).
 
-### Flask
-See the example in the `/examples/flask` folder of this repository.
-
 ### Other ASGI Frameworks
 
 If you are using a framework that is built on top of ASGI, it should work just by adding the Moesif middleware.
