@@ -283,7 +283,7 @@ For example, you may want to save a virtual machine instance ID, a trace ID, or 
     <code>(request, response)</code>
    </td>
    <td>
-    Dictionary
+    String
    </td>
   </tr>
 </table>
@@ -492,16 +492,10 @@ A field name used to parse the user from authorization header in Moesif.
    <th scope="col">
     Data type
    </th>
-   <th scope="col">
-    Default 
-   </th>
   </tr>
   <tr>
    <td>
     String
-   </td>
-   <td>
-    <code>sub</code>
    </td>
   </tr>
 </table>
@@ -632,7 +626,7 @@ and returns `True` if you want to skip this particular event.
   </tr>
 </table>
 
-Optional, but highly recommended).
+Optional, but highly recommended.
 
 A function that takes [Requests](http://docs.python-requests.org/en/master/api/) request and response objects, and returns a string that represents the user ID used by your system. 
 
@@ -842,7 +836,7 @@ app = FastAPI()
 app.add_middleware(MoesifMiddleware, settings=moesif_settings)
 ```
 
-You can use **`OAuth2`** in your FastAPI app with this middleware. For more information, see [OAuth2 with Password (and hashing), Bearer with JWT tokens](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/).
+You can use OAuth2 in your FastAPI app with this middleware. For more information, see [OAuth2 with Password (and hashing), Bearer with JWT tokens](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/).
 
 ## Tested versions
 
