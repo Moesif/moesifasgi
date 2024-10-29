@@ -233,7 +233,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             # we must fire these hooks early.
             user_id = await self.logger_helper.get_user_id(self.settings, request, None, dict(request.headers), self.DEBUG)
             company_id = await self.logger_helper.get_company_id(self.settings, request, None, self.DEBUG)
-            governed_response = self.config.govern_request(event_req, user_id, company_id, event_req.body)
+            governed_response = self.config.govern_request(event_req, user_id, company_id, event_req.body, request_headers)
 
         blocked_by = None
         if 'blocked_by' in governed_response:
