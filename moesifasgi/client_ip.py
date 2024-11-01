@@ -16,11 +16,8 @@ class ClientIp:
         try:
             ip = ipaddress.ip_address(value)
             return True
-        except:
-            # Ignore any error
-            pass
-
-        return None
+        except ValueError:
+            return False
 
     def getClientIpFromXForwardedFor(self, value, debug = False):
         try:
