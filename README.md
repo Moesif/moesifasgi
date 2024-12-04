@@ -13,12 +13,11 @@ and send them to [Moesif](https://www.moesif.com) for API analytics and monitori
 
 ## Overview
 
-This middleware allows you to integrate Moesif's API analytics and 
-API monetization features with minimal configuration into APIs that are built on Python ASGI-based (Asynchronous Server Gateway Interface) frameworks.
+This middleware allows you to easily integrate Moesif's API analytics and 
+API monetization service with APIs built on Python ASGI-based (Asynchronous Server Gateway Interface) frameworks including [FastAPI](https://fastapi.tiangolo.com/) and [Starlette](https://www.starlette.io/).
 
 [ASGI](https://asgi.readthedocs.io/en/latest/)
-is a spiritual successor to WSGI (Web Server Gateway Interface). ASGI provides a standard interface between async-capable Python web servers, frameworks, and applications. Many Python Frameworks
-are built on top of ASGI, such as [FastAPI](https://fastapi.tiangolo.com/).
+is a spiritual successor to WSGI (Web Server Gateway Interface) enabling async-capable applications.
 
 ## Prerequisites
 Before using this middleware, make sure you have the following:
@@ -725,110 +724,43 @@ See the example FastAPI app in the `examples/` folder of this repository that us
 Here's another sample FastAPI app:
 
 ```python
-# Your custom code that returns a user id string
-custom_user = "12345"
-
-async def custom_identify_user():
-    return custom_user
-
-# identify user using async mode
-async def identify_user(request, response):
-    user = await custom_identify_user()
-    return user
-
 # identify user not using async mode
 def identify_user(request, response):
-    return custom_user
-
-# Your custom code that returns a company id string
-custom_company = "67890"
-
-async def custom_identify_company():
-    return custom_company
-
-# identify company using async mode
-async def identify_company(request, response):
-    company = await custom_identify_company()
-    return company
+    return "12345"
 
 # identify company not using async mode
 def identify_company(request, response):
-    return custom_company
-
-custom_session_token = "XXXXXXXXXXXXXX"
-
-async def custom_get_token():
-    # If you don't want to use the standard ASGI session token,
-    # add your custom code that returns a string for session/API token
-    return custom_session_token
-
-# get session token using async mode
-async def get_token(request, response):
-    result = await custom_get_token()
-    return result
-
-# get session token not using async mode
-def get_token(request, response):
-    return custom_session_token
-
-custom_metadata = {
-    'datacenter': 'westus',
-    'deployment_version': 'v1.2.3',
-}
-
-async def custom_get_metadata():
-    return custom_metadata
-
-# get metadata using async mode
-async def get_metadata(request, response):
-    result = await custom_get_metadata()
-    return result
+    return "67890"
 
 # get metadata not using async mode
 def get_metadata(request, response):
-    return custom_metadata
-
-skip_route = "health/probe"
-
-async def custom_should_skip(request):
-    # Your custom code that returns `True` to skip logging
-    return skip_route in request.url._url
-
-# should skip check using async mode
-async def should_skip(request, response):
-    result = await custom_should_skip(request)
-    return result
+    return {
+        'datacenter': 'westus',
+        'deployment_version': 'v1.2.3',
+    }
 
 # should skip check not using async mode
 def should_skip(request, response):
-    return skip_route in request.url._url
+    return "health/probe" in request.url._url
 
-def custom_mask_event(eventmodel):
+# mask event not using async mode
+def mask_event(eventmodel):
     # Your custom code to change or remove any sensitive fields
     if 'password' in eventmodel.response.body:
         eventmodel.response.body['password'] = None
     return eventmodel
 
-# mask event using async mode
-async def mask_event(eventmodel):
-    return custom_mask_event(eventmodel)
-
-# mask event not using async mode
-def mask_event(eventmodel):
-    return custom_mask_event(eventmodel)
-
 
 moesif_settings = {
     'APPLICATION_ID': 'YOUR_MOESIF_APPLICATION_ID',
-    'DEBUG': False,
     'LOG_BODY': True,
+    'DEBUG': False,
     'IDENTIFY_USER': identify_user,
     'IDENTIFY_COMPANY': identify_company,
-    'GET_SESSION_TOKEN': get_token,
+    'GET_METADATA': get_metadata,
     'SKIP': should_skip,
     'MASK_EVENT_MODEL': mask_event,
-    'GET_METADATA': get_metadata,
-    'CAPTURE_OUTGOING_REQUESTS': False
+    'CAPTURE_OUTGOING_REQUESTS': False,
 }
 
 app = FastAPI()
@@ -842,10 +774,16 @@ You can use OAuth2 in your FastAPI app with this middleware. For more informatio
 
 Moesif has validated this middleware against the following frameworks and framework versions:
 
-|         | Framework Version |
+| Framework | Version |
 |---------|-------------------|
-| fastapi | > 0.51.0 - 0.78.0 |
-| fastapi |  0.108.0          |
+| fastapi | > 0.51.0 |
+| fastapi | > 0.78.0 |
+| fastapi | > 0.108.0 |
+| fastapi | > 0.115.5 |
+
+## Examples
+- [View example app with FastAPI](https://github.com/Moesif/moesifasgi/tree/master/examples/fastapi).
+
 
 ## Explore Other Integrations
 

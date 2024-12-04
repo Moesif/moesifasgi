@@ -27,11 +27,21 @@ logger = logging.getLogger(__name__)
 
 class MoesifMiddleware(BaseHTTPMiddleware):
     """ASGI Middleware for recording of request-response"""
-    def __init__(self, settings=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, app=None, settings=None, *args, **kwargs):
+        super().__init__(app, *args, **kwargs)
 
         if settings is None:
-            raise Exception('Moesif Application ID is required in settings')
+            raise Exception('settings is not set. Ensure MoesifMiddleware is initialized with settings')
+            return
+        
+        if not isinstance(settings, dict):
+            raise Exception('settings is not a dictionary. Ensure MoesifMiddleware is initialized with a settings dictionary')
+            return
+        
+        if 'APPLICATION_ID' not in settings:
+            raise Exception('APPLICATION_ID was not defined in settings. APPLICATION_ID is a required field')
+            return
+        
         self.settings = settings
         self.DEBUG = self.settings.get('DEBUG', False)
 
@@ -88,7 +98,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     def initialize_config(self):
         Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
-        Configuration.version = 'moesifasgi-python/1.0.10'
+        Configuration.version = 'moesifasgi-python/1.1.0'
         self.LOG_BODY = self.settings.get("LOG_BODY", True)
 
         self.app_config = AppConfig()
