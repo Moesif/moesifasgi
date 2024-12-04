@@ -779,7 +779,7 @@ Moesif has validated this middleware against the following frameworks and framew
 | fastapi | > 0.51.0 |
 | fastapi | > 0.78.0 |
 | fastapi | > 0.108.0 |
-| fastapi | > 0.108.0 |
+| fastapi | > 0.115.5 |
 
 ## Examples
 - [View example app with FastAPI](https://github.com/Moesif/moesifasgi/tree/master/examples/fastapi).
