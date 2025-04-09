@@ -382,7 +382,7 @@ Whether to log request and response body to Moesif.
     <code>int</code>
    </td>
    <td>
-    <code>25</code>
+    <code>100</code>
    </td>
   </tr>
 </table>
@@ -428,7 +428,7 @@ Maximum time in seconds to wait before sending a batch of events to Moesif when 
     <code>int</code>
    </td>
    <td>
-    <code>1000_000</code>
+    <code>1000000</code>
    </td>
   </tr>
 </table>
