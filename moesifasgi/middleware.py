@@ -6,6 +6,7 @@ from moesifapi.app_config import AppConfig
 from .async_iterator_wrapper import async_iterator_wrapper
 from .logger_helper import LoggerHelper
 from .event_mapper import EventMapper
+from .event_logger import EventLogger
 from moesifapi.update_companies import Company
 from moesifapi.update_users import User
 from starlette.middleware.base import _StreamingResponse
@@ -21,6 +22,7 @@ import random
 import logging
 import json
 import starlette.datastructures
+from .version import read_version
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,6 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.initialize_counter()
         self.initialize_client()
         self.initialize_config()
-        self.initialize_worker_pool()
 
         if self.settings.get('CAPTURE_OUTGOING_REQUESTS', False):
             try:
@@ -83,6 +84,9 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         self.parse_body = ParseBody()
 
     def initialize_client(self):
+        Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
+        Configuration.version = f'moesifasgi-python/{read_version()}'
+        self.LOG_BODY = self.settings.get("LOG_BODY", True)
         self.api_version = self.settings.get("API_VERSION")
         self.client = MoesifAPIClient(self.settings.get("APPLICATION_ID"))
         self.api_client = self.client.api
@@ -97,25 +101,10 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                 logger.info(f'Error while starting the config scheduler job in background: {str(ex)}')
 
     def initialize_config(self):
-        Configuration.BASE_URI = self.settings.get("BASE_URI", "https://api.moesif.net")
-        Configuration.version = 'moesifasgi-python/1.1.1'
-        self.LOG_BODY = self.settings.get("LOG_BODY", True)
-
         self.app_config = AppConfig()
         self.config = ConfigUpdateManager(self.api_client, self.app_config, self.DEBUG)
         self.schedule_config_job()
-
-    def initialize_worker_pool(self):
-        # Create queues and threads which will batch and send events in the background
-        self.worker_pool = BatchedWorkerPool(
-            worker_count=self.settings.get("EVENT_WORKER_COUNT", 2),
-            api_client=self.api_client,
-            config=self.config,
-            debug=self.DEBUG,
-            max_queue_size=self.settings.get("EVENT_QUEUE_SIZE", 1000000),
-            batch_size=self.settings.get("BATCH_SIZE", 100),
-            timeout=self.settings.get("EVENT_BATCH_TIMEOUT", 1),
-        )
+        self.event_logger = EventLogger(self.settings, self.config, self.api_client, self.DEBUG)
 
     def update_user(self, user_profile):
         User().update_user(user_profile, self.api_client, self.DEBUG)
@@ -277,11 +266,6 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
         # Read Response Body
         resp_body = None
-        if self.LOG_BODY and not is_multi_part_response_upload:
-            # Consuming FastAPI response and grabbing body here
-            resp_body = [section async for section in response.__dict__['body_iterator']]
-            # Preparing FastAPI response
-            response.__setattr__('body_iterator', async_iterator_wrapper(resp_body))
 
         # Prepare Event Response Model
         event_rsp = self.event_mapper.to_response(response, response_time, resp_body)
@@ -313,19 +297,22 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                          f" and random percentage: {str(random_percentage)}")
             return response
 
-        try:
-            # Add Event to the queue if able and count the dropped event if at capacity
-            if self.worker_pool.add_event(event_data):
-                logger.debug("Add Event to the queue")
-                if self.DEBUG:
-                    logger.info(f"Event added to the queue: {APIHelper.json_serialize(event_data)}")
-            else:
-                self.dropped_events += 1
-                logger.info(f"Dropped Event due to queue capacity drop_count: {str(self.dropped_events)}")
-                if self.DEBUG:
-                    logger.info(f"Event dropped: {APIHelper.json_serialize(event_data)}")
-        # add_event does not throw exceptions so this is unexepected
-        except Exception as ex:
-            logger.exception(f"Error while adding event to the queue: {str(ex)}")
+        resp_body = None
+        if self.LOG_BODY and not is_multi_part_response_upload:
+            async def log_body(body_iterator):
+                nonlocal resp_body, event_data
+                body_chunks = []
+                async for chunk in body_iterator:
+                    body_chunks.append(chunk)
+                    yield chunk
+                resp_body = b"".join(body_chunks)
+                body, transfer_encoding = self.event_mapper.parse(resp_body, response_headers)
+                event_data.response.body = body
+                event_data.response.transfer_encoding = transfer_encoding
+                self.event_logger.log_event(event_data)
 
+            response.body_iterator = log_body(response.body_iterator)
+        else:
+            self.event_logger.log_event(event_data)
+        
         return response
