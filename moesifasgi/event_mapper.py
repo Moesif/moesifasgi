@@ -12,6 +12,11 @@ class EventMapper:
         self.client_ip = ClientIp()
         self.transaction_id = None
 
+    def parse(self, body, headers): 
+        if not body or not isinstance(body, bytes) :
+            return None, None
+        return self.parse_body.parse_bytes_body(body, None, headers)
+
     async def to_event(self, event_req, event_rsp, user_id, company_id, session_token, metadata, blocked_by):
         return EventModel(request=event_req,
                           response=event_rsp,
@@ -66,18 +71,12 @@ class EventMapper:
         if self.transaction_id:
             response_headers["X-Moesif-Transaction-Id"] = self.transaction_id
         # Response Body
-        rsp_body = None
-        rsp_transfer_encoding = None
-        if response_body:
-            try:
-                rsp_body = response_body[0]
-            except Exception as e:
-                rsp_body = str(response_body)
+        rsp_body, rsp_transfer_encoding = self.parse(response_body, response_headers)
 
-            rsp_body, rsp_transfer_encoding = self.parse_body.parse_bytes_body(rsp_body, None, response_headers)
+        response = EventResponseModel(time=response_time,
+                                      status=response_status,
+                                      headers=response_headers,
+                                      body=rsp_body,
+                                      transfer_encoding=rsp_transfer_encoding)
+        return response
 
-        return EventResponseModel(time=response_time,
-                                  status=response_status,
-                                  headers=response_headers,
-                                  body=rsp_body,
-                                  transfer_encoding=rsp_transfer_encoding)
