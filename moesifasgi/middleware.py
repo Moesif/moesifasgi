@@ -176,23 +176,44 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     async def get_form_data(self, request: Request):
         try:
-            json_data = {}
-            body = await request.form()
+            # First, get the raw body content
+            body = await request.body()
 
-            # Iterate through the form data
-            for key, value in body.items():
+            # Create a copy of the request with the body content
+            async def receive() -> Message:
+                return {"type": "http.request", "body": body, "more_body": False}
+
+            # Store the original receive function
+            original_receive = request._receive
+
+            # Set our temporary receive function to get the form data
+            request._receive = receive
+
+            # Process the form data
+            form = await request.form()
+
+            # Create JSON representation for logging
+            json_data = {}
+            for key, value in form.items():
                 if isinstance(value, str):
-                    # If the value is a string, just add it to the JSON
                     json_data[key] = value
                 elif hasattr(value, 'filename'):
-                    # If the value is an UploadFile, store the filename
-                    json_data[key] = value.filename
+                    json_data[key] = {
+                        'filename': value.filename,
+                        'content_type': value.content_type
+                    }
 
-            if LooseVersion(self.starlette_version) < LooseVersion("0.29.0"):
-                self.set_form_data_body(request, body)
+            # Restore the original receive function
+            request._receive = original_receive
+
+            # Reset the request body for downstream processing
+            async def new_receive() -> Message:
+                return {"type": "http.request", "body": body, "more_body": False}
+            request._receive = new_receive
 
             return json.dumps(json_data).encode('utf-8')
-        except:
+        except Exception as e:
+            logger.error(f"Error processing form data: {str(e)}")
             return None
 
     @classmethod
