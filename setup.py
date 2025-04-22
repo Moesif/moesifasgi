@@ -2,18 +2,27 @@
 from setuptools import setup, find_packages
 from codecs import open
 from os import path
+import os
 
-here = path.abspath(path.dirname(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
 
-# Function to read the version from a file
-def read_version():
-    version_file = path.join(here, "moesifasgi", "version.py")
-    with open(version_file, "r", encoding="utf-8") as f:
-        for line in f:
-            if line.startswith("__version__"):
-                delim = '"' if '"' in line else "'"
-                return line.split(delim)[1]
-    raise RuntimeError("Version not found.")
+def read_version(filepath="VERSION"):
+    """Reads the version from the specified file."""
+    if not hasattr(read_version, '_version'):
+        try:
+            with open(os.path.join(here, filepath), 'r') as f:
+                version = f.readline().strip()
+                if version:  # Ensure the file is not empty
+                    read_version._version = version
+                else:
+                    raise ValueError("VERSION file is empty.")
+        except FileNotFoundError:
+            read_version._version = None
+        except ValueError as e:
+            print(f"Error: {e}")
+            read_version._version = None
+
+    return read_version._version
 
 # Get the long description from the README file
 long_description = ''
