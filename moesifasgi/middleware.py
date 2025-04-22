@@ -131,10 +131,9 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             -1] if "boundary=" in content_type else "------------------------boundary_string"
 
         async def receive() -> Message:
-            # Create the multipart body
+            # Create the multipart body for logging purposes
             multipart_body = []
 
-            # Iterate through the FormData and construct the multipart body
             for key, value in form_data.items():
                 multipart_body.append(f'--{boundary}')
                 multipart_body.append(f'Content-Disposition: form-data; name="{key}"')
@@ -144,24 +143,27 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                     multipart_body.append(value)
                 elif hasattr(value, 'filename'):
                     multipart_body.append(f'Content-Disposition: form-data; name="{key}"; filename="{value.filename}"')
-                    multipart_body.append('Content-Type: application/octet-stream')  # Set appropriate content type
+                    multipart_body.append('Content-Type: application/octet-stream')
                     multipart_body.append('')
-                    # Read the file content as bytes
+                    # Read the file content for logging purposes
                     file_content = await value.read()
-                    multipart_body.append(file_content)  # Append bytes directly
+                    multipart_body.append(file_content)
                     # Reset the file stream so it can be read again downstream
                     value.file.seek(0)
 
             # Add the closing boundary
             multipart_body.append(f'--{boundary}--')
 
-            # Join the parts and encode them as bytes
-            # Convert all string parts to bytes before joining
+            # Log the multipart body without modifying the request
             body_bytes = b'\r\n'.join(
-                part.encode('utf-8') if isinstance(part, str) else part for part in multipart_body)
+                part.encode('utf-8') if isinstance(part, str) else part for part in multipart_body
+            )
+            logger.debug(f"Multipart body (for logging only): {body_bytes}")
 
-            return {"type": "http.request", "body": body_bytes}
+            # Return the original request body unchanged
+            return await request._receive()
 
+        # Override the request's receive method
         request._receive = receive
 
     async def get_body(self, request: Request) -> bytes:
