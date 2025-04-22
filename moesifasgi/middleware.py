@@ -35,15 +35,15 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         if settings is None:
             raise Exception('settings is not set. Ensure MoesifMiddleware is initialized with settings')
             return
-        
+
         if not isinstance(settings, dict):
             raise Exception('settings is not a dictionary. Ensure MoesifMiddleware is initialized with a settings dictionary')
             return
-        
+
         if 'APPLICATION_ID' not in settings:
             raise Exception('APPLICATION_ID was not defined in settings. APPLICATION_ID is a required field')
             return
-        
+
         self.settings = settings
         self.DEBUG = self.settings.get('DEBUG', False)
 
@@ -129,6 +129,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         content_type = request.headers.get("content-type", "")
         boundary = content_type.split("boundary=")[
             -1] if "boundary=" in content_type else "------------------------boundary_string"
+
         async def receive() -> Message:
             # Create the multipart body
             multipart_body = []
@@ -148,6 +149,8 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                     # Read the file content as bytes
                     file_content = await value.read()
                     multipart_body.append(file_content)  # Append bytes directly
+                    # Reset the file stream so it can be read again downstream
+                    value.file.seek(0)
 
             # Add the closing boundary
             multipart_body.append(f'--{boundary}--')
@@ -314,5 +317,5 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             response.body_iterator = log_body(response.body_iterator)
         else:
             self.event_logger.log_event(event_data)
-        
+
         return response
