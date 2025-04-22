@@ -204,3 +204,5 @@ fabric.properties
 # *.ipr
 **/Pipfile
 **/Pipfile.lock
+
+test_file.*
