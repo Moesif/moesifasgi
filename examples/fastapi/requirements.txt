@@ -1,4 +1,4 @@
-moesifasgi
+-e ../../.
 uvicorn
 passlib>=1.7.4
 fastapi>=0.108.0

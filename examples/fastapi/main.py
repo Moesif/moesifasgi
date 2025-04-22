@@ -2,7 +2,7 @@ from moesifasgi import MoesifMiddleware
 from typing import Optional
 from datetime import datetime, timedelta
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
 
 
@@ -67,6 +67,11 @@ async def create_item(item: Item):
 @app.get("/hello")
 async def read_main():
     return {"message": "Hello World"}
+
+@app.post("/upload/")
+async def upload_file(file: UploadFile = File(...)):
+    content = await file.read()
+    return {"filename": file.filename, "content_size": len(content)}
 
 # in case you need run with debugger, those lines are needed
 # if __name__ == "__main__":

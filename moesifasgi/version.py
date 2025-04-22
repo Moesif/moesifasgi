@@ -1,5 +1,7 @@
 from os import path
 
+__version__ = "1.1.2"
+
 def read_version(filepath="../VERSION"):
     if not hasattr(read_version, '_version'):
         here = path.abspath(path.dirname(__file__))
