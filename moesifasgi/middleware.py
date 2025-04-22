@@ -130,6 +130,9 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         boundary = content_type.split("boundary=")[
             -1] if "boundary=" in content_type else "------------------------boundary_string"
 
+        # Store the original receive function
+        original_receive = request._receive
+
         async def receive() -> Message:
             # Create the multipart body for logging purposes
             multipart_body = []
@@ -161,7 +164,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Multipart body (for logging only): {body_bytes}")
 
             # Return the original request body unchanged
-            return await request._receive()
+            return await original_receive()
 
         # Override the request's receive method
         request._receive = receive
