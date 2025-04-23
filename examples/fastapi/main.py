@@ -2,7 +2,7 @@ from moesifasgi import MoesifMiddleware
 from typing import Optional
 from datetime import datetime, timedelta
 from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile, Form
 from pydantic import BaseModel
 
 
@@ -32,15 +32,17 @@ def should_skip(request, response):
 
 # mask event not using async mode
 def mask_event(eventmodel):
-    # Your custom code to change or remove any sensitive fields
-    if 'password' in eventmodel.response.body:
-        eventmodel.response.body['password'] = None
+    # Ensure the response body exists and is a dictionary
+    if eventmodel.response.body and isinstance(eventmodel.response.body, dict):
+        # Mask sensitive fields, such as 'password'
+        if 'password' in eventmodel.response.body:
+            eventmodel.response.body['password'] = None
     return eventmodel
 
 moesif_settings = {
     'APPLICATION_ID': 'Your Moesif Application Id',
     'LOG_BODY': True,
-    'DEBUG': False,
+    'DEBUG': True,
     'IDENTIFY_USER': identify_user,
     'IDENTIFY_COMPANY': identify_company,
     'GET_METADATA': get_metadata,
@@ -67,6 +69,24 @@ async def create_item(item: Item):
 @app.get("/hello")
 async def read_main():
     return {"message": "Hello World"}
+
+@app.post("/upload/")
+async def upload_file(file: UploadFile = File(...)):
+    content = await file.read()
+    return {"filename": file.filename, "content_size": len(content)}
+
+@app.post("/submit-form/")
+async def submit_form(
+    username: str = Form(...),
+    email: str = Form(...),
+    message: str = Form(default="")
+):
+    return {
+        "username": username,
+        "email": email,
+        "message": message,
+        "status": "success"
+    }
 
 # in case you need run with debugger, those lines are needed
 # if __name__ == "__main__":

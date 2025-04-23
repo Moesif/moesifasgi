@@ -36,15 +36,15 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         if settings is None:
             raise Exception('settings is not set. Ensure MoesifMiddleware is initialized with settings')
             return
-        
+
         if not isinstance(settings, dict):
             raise Exception('settings is not a dictionary. Ensure MoesifMiddleware is initialized with a settings dictionary')
             return
-        
+
         if 'APPLICATION_ID' not in settings:
             raise Exception('APPLICATION_ID was not defined in settings. APPLICATION_ID is a required field')
             return
-        
+
         self.settings = settings
         self.DEBUG = self.settings.get('DEBUG', False)
 
@@ -136,11 +136,14 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         content_type = request.headers.get("content-type", "")
         boundary = content_type.split("boundary=")[
             -1] if "boundary=" in content_type else "------------------------boundary_string"
+
+        # Store the original receive function
+        original_receive = request._receive
+
         async def receive() -> Message:
-            # Create the multipart body
+            # Create the multipart body for logging purposes
             multipart_body = []
 
-            # Iterate through the FormData and construct the multipart body
             for key, value in form_data.items():
                 multipart_body.append(f'--{boundary}')
                 multipart_body.append(f'Content-Disposition: form-data; name="{key}"')
@@ -150,22 +153,27 @@ class MoesifMiddleware(BaseHTTPMiddleware):
                     multipart_body.append(value)
                 elif hasattr(value, 'filename'):
                     multipart_body.append(f'Content-Disposition: form-data; name="{key}"; filename="{value.filename}"')
-                    multipart_body.append('Content-Type: application/octet-stream')  # Set appropriate content type
+                    multipart_body.append('Content-Type: application/octet-stream')
                     multipart_body.append('')
-                    # Read the file content as bytes
+                    # Read the file content for logging purposes
                     file_content = await value.read()
-                    multipart_body.append(file_content)  # Append bytes directly
+                    multipart_body.append(file_content)
+                    # Reset the file stream so it can be read again downstream
+                    value.file.seek(0)
 
             # Add the closing boundary
             multipart_body.append(f'--{boundary}--')
 
-            # Join the parts and encode them as bytes
-            # Convert all string parts to bytes before joining
+            # Log the multipart body without modifying the request
             body_bytes = b'\r\n'.join(
-                part.encode('utf-8') if isinstance(part, str) else part for part in multipart_body)
+                part.encode('utf-8') if isinstance(part, str) else part for part in multipart_body
+            )
+            logger.debug(f"Multipart body (for logging only): {body_bytes}")
 
-            return {"type": "http.request", "body": body_bytes}
+            # Return the original request body unchanged
+            return await original_receive()
 
+        # Override the request's receive method
         request._receive = receive
 
     async def get_body(self, request: Request) -> bytes:
@@ -179,13 +187,26 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
     async def get_form_data(self, request: Request):
         try:
-            json_data = {}
-            body = await request.form()
+            # First, get the raw body content
+            body = await request.body()
 
-            # Iterate through the form data
-            for key, value in body.items():
+            # Create a copy of the request with the body content
+            async def receive() -> Message:
+                return {"type": "http.request", "body": body, "more_body": False}
+
+            # Store the original receive function
+            original_receive = request._receive
+
+            # Set our temporary receive function to get the form data
+            request._receive = receive
+
+            # Process the form data
+            form = await request.form()
+
+            # Create JSON representation for logging
+            json_data = {}
+            for key, value in form.items():
                 if isinstance(value, str):
-                    # If the value is a string, just add it to the JSON
                     json_data[key] = value
                 elif hasattr(value, 'filename'):
                     # If the value is an UploadFile, store the filename
@@ -196,7 +217,8 @@ class MoesifMiddleware(BaseHTTPMiddleware):
 
             self.log_checkpoint(request.mo_start_time, "Get form data")
             return json.dumps(json_data).encode('utf-8')
-        except:
+        except Exception as e:
+            logger.error(f"Error processing form data: {str(e)}")
             return None
 
     @classmethod
@@ -217,7 +239,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         if self.DEBUG:
             request.mo_start_time = time.perf_counter()
-        else: 
+        else:
             request.mo_start_time = None
 
         # request time
@@ -290,7 +312,7 @@ class MoesifMiddleware(BaseHTTPMiddleware):
         # Response headers
         response_headers = dict(response.headers)
         self.log_checkpoint(request.mo_start_time, "Response header")
-        
+
         # Check if multipart/form-data payload
         is_multi_part_response_upload = self.parse_body.is_multi_part_upload(response_headers)
         self.log_checkpoint(request.mo_start_time, "Multipart form-data Response")
@@ -354,9 +376,9 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             response.body_iterator = log_body(response.body_iterator)
         else:
             self.event_logger.log_event(event_data)
-        
+
         self.log_checkpoint(request.mo_start_time, "Response body and/or log event")
-        
+
         self.log_checkpoint(request.mo_start_time, "Dispatch")
 
         return response
