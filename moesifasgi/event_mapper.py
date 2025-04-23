@@ -27,13 +27,11 @@ class EventMapper:
                           direction="Incoming",
                           blocked_by=blocked_by)
 
-    def to_request(self, request, request_time, request_body, api_version, disable_capture_transaction_id, debug=False):
+    def to_request(self, request, request_time, request_headers, request_body, api_version, disable_capture_transaction_id, debug=False):
         # Request URI
         request_uri = request.url._url
         # Request Verb
         request_verb = request.method
-        # Request Headers
-        request_headers = dict(request.headers)
         # Add Transaction Id to headers
         if not disable_capture_transaction_id:
             req_trans_id = request_headers.get("x-moesif-transaction-id")
@@ -62,21 +60,19 @@ class EventMapper:
                                  body=req_body,
                                  transfer_encoding=req_transfer_encoding)
 
-    def to_response(self, response, response_time, response_body):
+    def to_response(self, response, response_time, response_headers, response_body):
         # Response Status code
         response_status = response.status_code
-        # Response Headers
-        response_headers = dict(response.headers)
         # Add transaction id to the response header
         if self.transaction_id:
             response_headers["X-Moesif-Transaction-Id"] = self.transaction_id
         # Response Body
         rsp_body, rsp_transfer_encoding = self.parse(response_body, response_headers)
 
-        response = EventResponseModel(time=response_time,
+        response_model = EventResponseModel(time=response_time,
                                       status=response_status,
                                       headers=response_headers,
                                       body=rsp_body,
                                       transfer_encoding=rsp_transfer_encoding)
-        return response
+        return response_model
 
