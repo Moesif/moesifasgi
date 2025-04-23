@@ -82,7 +82,7 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['starlette>=0.16.0', 'moesifapi>=1.5.4', 'moesifpythonrequest>=0.3.4'],
+    install_requires=['starlette>=0.16.0', 'moesifapi>=1.5.5', 'moesifpythonrequest>=0.3.4'],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
