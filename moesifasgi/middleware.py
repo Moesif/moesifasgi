@@ -347,8 +347,9 @@ class MoesifMiddleware(BaseHTTPMiddleware):
             random_percentage = random.random() * 100
 
             if random_percentage >= self.sampling_percentage:
-                logger.info(f"Skipped Event due to sampling percentage: {str(self.sampling_percentage)}"
-                            f" and random percentage: {str(random_percentage)}")
+                if self.DEBUG:
+                    logger.info(f"Skipped Event due to sampling percentage: {str(self.sampling_percentage)}"
+                            f" and random percentage: {str(random_percentage)} ")
                 return response
         else:
             self.sampling_percentage = 100
