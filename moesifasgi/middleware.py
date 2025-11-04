@@ -16,7 +16,13 @@ from moesifapi.workers import ConfigJobScheduler
 from moesifapi.parse_body import ParseBody
 from starlette.types import Message
 from importlib.metadata import version
-from distutils.version import LooseVersion
+try:
+    from packaging.version import Version as LooseVersion
+except ImportError:
+    try:
+        from distutils.version import LooseVersion
+    except ImportError as e:
+        raise ImportError("Neither 'packaging' nor 'distutils' is available. ") from e
 import math
 import random
 import logging

@@ -59,7 +59,7 @@ setup(
     ],
     keywords='log analysis restful api development debug asgi fastapi http middleware',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=['starlette>=0.16.0', 'moesifapi>=1.5.5', 'moesifpythonrequest>=0.3.4'],
+    install_requires=['starlette>=0.16.0', 'moesifapi>=1.5.5', 'moesifpythonrequest>=0.3.4', 'packaging'],
     extras_require={
         'dev': [],
         'test': ['nose'],
