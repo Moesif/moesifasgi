@@ -1,3 +1,5 @@
+include VERSION
+
 # Include the license file
 include LICENSE
 include README.md
